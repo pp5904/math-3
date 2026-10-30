@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>자로 배우는 소수</title>
+<style>
+  body{font-family:system-ui,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;background:#f4f6fb;margin:0;padding:16px;color:#222}
+  .wrap{max-width:720px;margin:0 auto}
+  h1{font-size:1.5em;margin:4px 0 8px}
+  .sub{color:#666;font-size:.95em;margin-bottom:10px}
+  .card{background:#fff;border-radius:12px;padding:16px;margin-top:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin:10px 0}
+  button{padding:9px 14px;border:none;border-radius:8px;background:#4a6cf7;color:#fff;font-size:1em;cursor:pointer}
+  button.alt{background:#e7eaf6;color:#222}
+  button.tab{background:#dfe3f2;color:#333}
+  button.tab.on{background:#4a6cf7;color:#fff}
+  input[type=range]{width:100%}
+  input[type=number]{font-size:1.1em;padding:7px;width:120px;border:1px solid #bbb;border-radius:8px;text-align:center}
+  svg{width:100%;height:auto;display:block}
+  .big{font-size:1.7em;font-weight:700;text-align:center;margin:8px 0}
+  .eq{font-size:1.1em;text-align:center;line-height:1.9}
+  table{margin:8px auto;border-collapse:collapse}
+  td,th{border:1px solid #ddd;padding:6px 12px;text-align:center}
+  th{background:#f0f2f8;font-weight:600;font-size:.9em}
+  td{font-size:1.4em;font-weight:700}
+  .ok{color:#1a8f3a;font-weight:700}
+  .no{color:#c0392b;font-weight:700}
+  .hint{color:#555;font-size:.92em;text-align:center}
+  .hidden{display:none}
+  .q{font-size:1.5em;font-weight:700;text-align:center;margin:12px 0}
+  .score{text-align:center;color:#444}
+  .rwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+  .zoombar{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .zoombar span{font-weight:700;min-width:64px;text-align:center}
+  .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px;line-height:1.15}
+  .frac .num{padding:0 5px 2px;border-bottom:2px solid currentColor;text-align:center;min-width:1.2em}
+  .frac .den{padding:2px 5px 0;text-align:center;min-width:1.2em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📏 자로 배우는 소수</h1>
+  <div class="sub">1 cm = 10 mm, 1 mm = 0.1 cm = 1/10 cm 를 직접 만져 보며 소수의 자릿값을 익혀 봅니다.</div>
+
+  <div class="row">
+    <button class="tab on" id="btn-ex" onclick="showTab('ex')">① 탐색하기 · 1 mm = 0.1 cm 원리</button>
+    <button class="tab" id="btn-h" onclick="showTab('h')">② cm·m로 0.01 알아보기</button>
+    <button class="tab" id="btn-k" onclick="showTab('k')">③ km·m로 0.001 알아보기</button>
+    <button class="tab" id="btn-r" onclick="showTab('r')">④ 자릿값 관계 (영역 모델)</button>
+    <button class="tab" id="btn-p" onclick="showTab('p')">⑤ 소수의 10배·1/10 (자릿값판)</button>
+    <button class="tab" id="btn-c" onclick="showTab('c')">⑥ 영역 모델로 소수 비교</button>
+  </div>
+
+  <div class="zoombar">
+    <span style="font-weight:400">🔍 눈금 확대</span>
+    <button class="alt" onclick="changeZoom(-1)">축소 −</button>
+    <span id="zoom-label">100%</span>
+    <button class="alt" onclick="changeZoom(1)">확대 +</button>
+    <button class="alt" onclick="setZoom(1)">원래 크기</button>
+  </div>
+  <p class="hint">확대하면 자가 가로로 길어지니, 옆으로 밀어서 전체 눈금을 볼 수 있습니다.</p>
+
+  <!-- ① 탐색 -->
+  <section id="tab-ex" class="card">
+    <div class="row"><button class="alt" onclick="showTab('s')">▶ 1 mm = 0.1 cm 원리 보기</button></div>
+    <div id="ex-ruler" class="rwrap"></div>
+    <input type="range" id="ex-slider" min="0" max="100" value="25" oninput="setN(+this.value)">
+    <div class="row">
+      <button class="alt" onclick="setN(N-10)">−1 cm</button>
+      <button class="alt" onclick="setN(N-1)">−1 mm</button>
+      <button class="alt" onclick="setN(N+1)">+1 mm</button>
+      <button class="alt" onclick="setN(N+10)">+1 cm</button>
+    </div>
+    <div class="big" id="ex-big"></div>
+    <table>
+      <tr><th>일의 자리<br>(1 cm)</th><th></th><th>소수 첫째 자리<br>(0.1 cm = 1 mm)</th></tr>
+      <tr><td id="ex-c"></td><td style="font-size:1.8em;color:#c0392b;padding:0 6px">.</td><td id="ex-m"></td></tr>
+    </table>
+    <div class="eq">
+      소수: <b id="ex-dec"></b><br>
+      분수: <b id="ex-frac"></b>
+    </div>
+    <p class="hint">슬라이더나 버튼으로 길이를 바꾸면 자릿값 표, 소수, 분수가 함께 바뀝니다.</p>
+
+    <!-- 영역 모델 -->
+    <div class="card" style="margin-top:14px">
+      <h3 style="text-align:center;margin:4px 0">🟧 영역 모델: 0.1이 몇 개일까?</h3>
+      <div id="area-box" style="max-width:420px;margin:0 auto"></div>
+      <input type="range" id="area-slider" min="0" max="20" value="9" oninput="setArea(+this.value)">
+      <div class="row">
+        <button class="alt" onclick="setArea(AREA-1)">−0.1 한 칸</button>
+        <button class="alt" onclick="setArea(AREA+1)">+0.1 한 칸</button>
+      </div>
+      <div class="eq" id="area-eq"></div>
+      <p class="hint">정사각형 하나가 1이고, 10칸으로 나눈 한 칸이 0.1입니다. 칸이 10개를 넘으면 두 번째 정사각형으로 이어집니다.</p>
+    </div>
+  </section>
+
+  <!-- ① 원리 설명 (탐색하기와 묶음) -->
+  <section id="tab-s" class="card hidden">
+    <div class="row"><button class="alt" onclick="showTab('ex')">◀ 탐색하기 보기</button></div>
+    <div class="hint" id="s-count"></div>
+    <h3 id="s-title" style="text-align:center;margin:6px 0"></h3>
+    <div id="s-visual"></div>
+    <p class="eq" id="s-text"></p>
+    <div class="row">
+      <button class="alt" onclick="stepMove(-1)">◀ 이전</button>
+      <button onclick="stepMove(1)">다음 ▶</button>
+      <button class="alt" onclick="stepGo(0)">처음부터</button>
+    </div>
+  </section>
+
+  <!-- ④ cm·m로 0.01 알아보기 -->
+  <section id="tab-h" class="card hidden">
+    <h3 style="text-align:center;margin:4px 0">📐 자로 보는 1 cm = 0.01 m</h3>
+    <div id="h-ruler" class="rwrap"></div>
+    <input type="range" id="h-slider" min="0" max="100" value="37" oninput="setH(+this.value)">
+    <div class="row">
+      <button class="alt" onclick="setH(H-10)">−10 cm</button>
+      <button class="alt" onclick="setH(H-1)">−1 cm</button>
+      <button class="alt" onclick="setH(H+1)">+1 cm</button>
+      <button class="alt" onclick="setH(H+10)">+10 cm</button>
+    </div>
+    <div class="big" id="h-big"></div>
+    <table>
+      <tr><th>일의 자리<br>(1 m)</th><th></th><th>소수 첫째 자리<br>(0.1 m = 10 cm)</th><th></th><th>소수 둘째 자리<br>(0.01 m = 1 cm)</th></tr>
+      <tr><td id="h-d1"></td><td style="font-size:1.8em;color:#c0392b;padding:0 6px">.</td><td id="h-d2"></td><td style="font-size:1.8em;color:#c0392b;padding:0 6px">.</td><td id="h-d3"></td></tr>
+    </table>
+    <div class="eq">
+      소수: <b id="h-dec"></b><br>
+      분수: <b id="h-frac"></b>
+    </div>
+    <p class="hint">1 cm는 1 m의 100분의 1이므로 1 cm = 0.01 m = 1/100 m 입니다.</p>
+
+    <div class="card" style="margin-top:14px">
+      <h3 style="text-align:center;margin:4px 0">🟧 영역 모델: 분수를 소수로, 0.01이 몇 개?</h3>
+      <div id="h-area" style="max-width:460px;margin:0 auto"></div>
+      <input type="range" id="h-area-slider" min="0" max="399" value="37" oninput="setHA(+this.value)">
+      <div class="row">
+        <button class="alt" onclick="setHA(HA-10)">−10칸</button>
+        <button class="alt" onclick="setHA(HA-1)">−1칸</button>
+        <button class="alt" onclick="setHA(HA+1)">+1칸</button>
+        <button class="alt" onclick="setHA(HA+10)">+10칸</button>
+      </div>
+      <div class="hint" id="h-legend" style="margin-top:8px"></div>
+      <div class="eq" id="h-area-eq"></div>
+      <p class="hint">세 자리를 따로 보여 줍니다. 자연수는 정사각형 1개가 1, 소수 첫째 자리는 0.1이 10개 모이면 1, 소수 둘째 자리는 100칸 모델에서 0.01 칸 몇 개인지 보여 줍니다.</p>
+    </div>
+  </section>
+
+  <!-- ⑤ km·m로 0.001 알아보기 -->
+  <section id="tab-k" class="card hidden">
+    <h3 style="text-align:center;margin:4px 0">📏 자로 보는 1 m = 0.001 km</h3>
+    <div id="k-ruler" class="rwrap"></div>
+    <p class="hint" style="margin:6px 0 0">아래는 눈금을 한 번 더 10칸으로 쪼갠 확대 보기입니다 (1 m 간격)</p>
+    <div id="k-mag" class="rwrap"></div>
+    <input type="range" id="k-slider" min="0" max="1000" value="370" oninput="setK(+this.value)">
+    <div class="row">
+      <button class="alt" onclick="setK(K-100)">−100 m</button>
+      <button class="alt" onclick="setK(K-10)">−10 m</button>
+      <button class="alt" onclick="setK(K-1)">−1 m</button>
+      <button class="alt" onclick="setK(K+1)">+1 m</button>
+      <button class="alt" onclick="setK(K+10)">+10 m</button>
+      <button class="alt" onclick="setK(K+100)">+100 m</button>
+    </div>
+    <div class="big" id="k-big"></div>
+    <table>
+      <tr><th>일의 자리<br>(1 km)</th><th></th><th>소수 첫째 자리<br>(0.1 km = 100 m)</th><th></th><th>소수 둘째 자리<br>(0.01 km = 10 m)</th><th></th><th>소수 셋째 자리<br>(0.001 km = 1 m)</th></tr>
+      <tr><td id="k-d1"></td><td style="font-size:1.8em;color:#c0392b;padding:0 4px">.</td><td id="k-d2"></td><td style="font-size:1.8em;color:#c0392b;padding:0 4px">.</td><td id="k-d3"></td><td style="font-size:1.8em;color:#c0392b;padding:0 4px">.</td><td id="k-d4"></td></tr>
+    </table>
+    <div class="eq">
+      소수: <b id="k-dec"></b><br>
+      분수: <b id="k-frac"></b>
+    </div>
+    <p class="hint">1 m는 1 km의 1000분의 1이므로 1 m = 0.001 km = 1/1000 km 입니다.</p>
+
+    <div class="card" style="margin-top:14px">
+      <h3 style="text-align:center;margin:4px 0">🟧 영역 모델: 분수를 소수로, 0.001이 몇 개?</h3>
+      <div id="k-area" style="max-width:520px;margin:0 auto"></div>
+      <div id="k-ctrl"></div>
+      <div class="hint" id="k-legend" style="margin-top:8px"></div>
+      <div class="eq" id="k-area-eq"></div>
+      <p class="hint">각 자리의 개수를 직접 바꿀 수 있습니다. 10개가 모이면 「10개 묶기 ↑」로 한 자리 위로 넘기고, 「1개 풀기 ↓」로 한 자리 아래 10개로 바꿀 수 있습니다. 소수 셋째 자리는 1000칸을 모두 색칠할 수 있습니다.</p>
+    </div>
+  </section>
+  <!-- ⑥ 자릿값 관계 (영역 모델) -->
+  <section id="tab-r" class="card hidden">
+    <h3 style="text-align:center;margin:4px 0">🔗 1, 0.1, 0.01, 0.001의 관계 (영역 모델)</h3>
+    <div id="r-diagram" class="rwrap"></div>
+    <p class="hint">위의 「10배·100배·1000배」, 「1/10·1/100·1/1000」 버튼을 누르면 전체 수가 바로 바뀌고 모형도 함께 바뀝니다. 「○개 묶기 ↑」는 작은 칸 여러 개를 한 단계 큰 칸 1개로, 「1개 풀기 ↓」는 1개를 아래 칸 10개로 바꿉니다.</p>
+    <div id="r-ctrl"></div>
+    <div class="eq" id="r-comp"></div>
+    <div class="row">
+      <button class="alt" onclick="setRU('1')">기준: 1</button>
+      <button class="alt" onclick="setRU('0.1')">기준: 0.1</button>
+      <button class="alt" onclick="setRU('0.01')">기준: 0.01</button>
+      <button class="alt" onclick="setRU('0.001')">기준: 0.001</button>
+    </div>
+    <div class="eq" id="r-eq"></div>
+    <p class="hint">빨간 화살표는 한 칸 작은 단위에서 큰 단위로 갈 때 10배, 파란 화살표는 큰 단위에서 작은 단위로 갈 때 1/10입니다. 점선 상자를 바꾸어 기준을 골라 보세요.</p>
+  </section>
+  <!-- ⑦ 소수의 10배·1/10 (자릿값판) -->
+  <section id="tab-p" class="card hidden">
+    <h3 style="text-align:center;margin:4px 0">🧮 숫자가 움직이는 자릿값판 (소수의 10배, 1/10)</h3>
+    <div class="row"><button class="alt" onclick="pReset()">처음부터</button><button class="alt" onclick="showTab('x')">▶ 소수점이 움직이는 방식 보기</button></div>
+    <div class="row" style="justify-content:center;gap:6px;flex-wrap:nowrap">
+      <button onclick="pOp(10,1)">10배 ↑</button>
+      <button onclick="pOp(100,1)">100배 ↑</button>
+      <button onclick="pOp(1000,1)">1000배 ↑</button>
+      <button onclick="pOp(10,-1)">1/10 ↓</button>
+      <button onclick="pOp(100,-1)">1/100 ↓</button>
+      <button onclick="pOp(1000,-1)">1/1000 ↓</button>
+    </div>
+    <div id="p-board" class="rwrap"></div>
+    <div class="row">
+      <span style="font-size:.9em">움직임 속도 (오른쪽일수록 느림)</span>
+      <input type="range" id="p-speed" min="0.2" max="3" step="0.1" value="0.7" style="width:200px" oninput="pSetSpeed(+this.value)">
+      <span id="p-speed-label" style="min-width:48px">0.7초</span>
+    </div>
+    <div class="row">
+      <input type="text" id="p-input" placeholder="예: 35.27" style="width:140px;font-size:1.1em;padding:6px;text-align:center" onkeydown="if(event.key==='Enter')pInput()">
+      <button onclick="pInput()">숫자 입력</button>
+    </div>
+    <div class="row" id="p-digits"></div>
+    <div class="eq" id="p-msg"></div>
+    <p class="hint">처음 판의 숫자를 정한 뒤 「배」 버튼을 누르면, 결과가 처음 판 아래에 차례로 쌓입니다. 빨간 화살표는 10배, 파란 화살표는 1/10입니다. 숫자 칸을 누르면 그 자리의 숫자가 1씩 바뀝니다.</p>
+  </section>
+  <!-- ⑧ 소수점이 움직이는 자릿값판 -->
+  <section id="tab-x" class="card hidden">
+    <h3 style="text-align:center;margin:4px 0">🧮 소수점이 움직이는 자릿값판</h3>
+    <div class="row"><button class="alt" onclick="xReset()">처음부터</button><button class="alt" onclick="showTab('p')">◀ 숫자가 움직이는 방식 보기</button></div>
+    <div id="x-board" class="rwrap"></div>
+    <div class="row">
+      <span style="font-size:.9em">움직임 속도 (오른쪽일수록 느림)</span>
+      <input type="range" id="x-speed" min="0.2" max="3" step="0.1" value="0.7" style="width:200px" oninput="xSetSpeed(+this.value)">
+      <span id="x-speed-label" style="min-width:48px">0.7초</span>
+    </div>
+    <div class="row">
+      <button onclick="xOp(10,1)">10배 ↑</button>
+      <button onclick="xOp(100,1)">100배 ↑</button>
+      <button onclick="xOp(1000,1)">1000배 ↑</button>
+    </div>
+    <div class="row">
+      <button onclick="xOp(10,-1)">1/10 ↓</button>
+      <button onclick="xOp(100,-1)">1/100 ↓</button>
+      <button onclick="xOp(1000,-1)">1/1000 ↓</button>
+    </div>
+    <div class="row">
+      <input type="text" id="x-input" placeholder="예: 35.27" style="width:140px;font-size:1.1em;padding:6px;text-align:center" onkeydown="if(event.key==='Enter')xInput()">
+      <button onclick="xInput()">숫자 입력</button>
+    </div>
+    <div class="row" id="x-digits"></div>
+    <div class="eq" id="x-msg"></div>
+    <p class="hint">숫자는 그대로 두고 소수점(●)만 움직입니다. 「10배 ↑」는 소수점이 오른쪽으로, 「1/10 ↓」는 왼쪽으로 옮겨 갑니다. 숫자 칸을 누르면 그 자리의 숫자가 1씩 바뀝니다.</p>
+  </section>
+  <!-- ⑧ 영역 모델로 소수 비교 -->
+  <section id="tab-c" class="card hidden">
+    <h3 style="text-align:center;margin:4px 0">⚖️ 영역 모델로 두 소수 비교하기</h3>
+    <div class="row" style="align-items:flex-start;gap:28px">
+      <div id="c-ctrlA" style="text-align:center"></div>
+      <div id="c-ctrlB" style="text-align:center"></div>
+    </div>
+    <div class="big" id="c-result"></div>
+    <div id="c-modelA"></div>
+    <div id="c-modelB"></div>
+    <div class="eq" id="c-why"></div>
+    <p class="hint">자연수부터 같은 자리끼리 차례로 비교합니다. 처음으로 다른 자리(빨간 점선 상자)에서 더 많은 쪽이 큰 수입니다. 각 자리의 칸 수를 세어 비교해 보세요.</p>
+  </section>
+</div>
+
+<script>
+  // ---------- 공통: 자 그리기 ----------
+  const OX = 10, PX = 6, BASE = 76;
+
+  // 눈금 확대 배율
+  let ZOOM = 1;
+  const ZOOM_STEPS = [1, 1.5, 2, 3, 4];
+  function changeZoom(dir) {
+    let i = ZOOM_STEPS.indexOf(ZOOM);
+    i = Math.max(0, Math.min(ZOOM_STEPS.length - 1, i + dir));
+    setZoom(ZOOM_STEPS[i]);
+  }
+  function setZoom(z) {
+    ZOOM = z;
+    document.getElementById("zoom-label").textContent = Math.round(z * 100) + "%";
+    renderExplore();
+    renderH();
+    renderK();
+    renderKA();
+    renderR();
+    renderP();
+    xRender();
+  }
+
+  function svgRuler(len) {
+    let s = `<svg viewBox="0 0 650 124" style="width:${ZOOM * 100}%" xmlns="http://www.w3.org/2000/svg">`;
+    // 길이만큼 색칠된 막대
+    s += `<rect x="${OX}" y="${BASE - 42}" width="${len * PX}" height="42" fill="#ffb74d" opacity=".45"/>`;
+    s += `<rect x="${OX}" y="${BASE - 3}" width="${len * PX}" height="3" fill="#e67e22"/>`;
+    // 자의 바닥선
+    s += `<line x1="${OX}" y1="${BASE}" x2="${OX + 100 * PX}" y2="${BASE}" stroke="#333" stroke-width="1.2"/>`;
+    for (let m = 0; m <= 100; m++) {
+      const x = OX + m * PX;
+      const h = m % 10 === 0 ? 34 : (m % 5 === 0 ? 22 : 12);
+      const col = m % 10 === 0 ? "#c0392b" : "#444";
+      const w = m % 10 === 0 ? 1.6 : 0.8;
+      s += `<line x1="${x}" y1="${BASE}" x2="${x}" y2="${BASE - h}" stroke="${col}" stroke-width="${w}"/>`;
+      if (m % 10 === 0) {
+        // 위쪽: mm 눈금 숫자
+        s += `<text x="${x}" y="${BASE - 44}" font-size="11" fill="#2a6fdb" text-anchor="middle">${m}</text>`;
+        // 아래쪽: cm 눈금 숫자
+        s += `<text x="${x}" y="${BASE + 18}" font-size="13" font-weight="700" fill="#c0392b" text-anchor="middle">${m / 10}</text>`;
+      }
+    }
+    s += `<text x="${OX + 100 * PX + 6}" y="${BASE - 44}" font-size="11" fill="#2a6fdb">mm</text>`;
+    s += `<text x="${OX + 100 * PX + 6}" y="${BASE + 18}" font-size="13" font-weight="700" fill="#c0392b">cm</text>`;
+    s += `</svg>`;
+    return s;
+  }
+
+  // 분수 표현: 47 mm -> 4과 7/10 cm
+  // 가로선이 있는 분수 HTML: 분자 / 분모
+  function fr(num, den) {
+    return `<span class="frac"><span class="num">${num}</span><span class="den">${den}</span></span>`;
+  }
+  function fracText(n) {
+    const c = Math.floor(n / 10), r = n % 10;
+    if (r === 0) return `${c} cm`;
+    if (c === 0) return `${fr(r, 10)} cm`;
+    return `${c}과 ${fr(r, 10)} cm`;
+  }
+
+  // ---------- 탭 ----------
+  function showTab(name) {
+    ["ex", "s", "h", "k", "r", "p", "x", "c"].forEach(t => {
+      document.getElementById("tab-" + t).classList.toggle("hidden", t !== name);
+      // ⑦과 ⑧(소수점 방식)은 한 묶음이므로 ⑦ 버튼이 켜진 상태로 보임
+      const btn = document.getElementById("btn-" + t);
+      // ①의 원리 설명(s)은 탐색하기(ex) 버튼, ⑤의 소수점 방식(x)은 ⑤ 버튼이 켜진 상태로 보임
+      const group = { s: "ex", x: "p" }[name] || name;
+      if (btn) btn.classList.toggle("on", t === group);
+    });
+  }
+
+  // ---------- ① 탐색 ----------
+  let N = 25; // 단위: mm (0~100)
+  function setN(v) {
+    N = Math.max(0, Math.min(100, v));
+    renderExplore();
+  }
+  function renderExplore() {
+    const c = Math.floor(N / 10), m = N % 10;
+    document.getElementById("ex-ruler").innerHTML = svgRuler(N);
+    document.getElementById("ex-slider").value = N;
+    document.getElementById("ex-big").textContent = `${c} cm ${m} mm`;
+    document.getElementById("ex-c").textContent = c;
+    document.getElementById("ex-m").textContent = m;
+    document.getElementById("ex-dec").textContent = `${c}.${m} cm`;
+    document.getElementById("ex-frac").innerHTML = fracText(N);
+  }
+
+  // ---------- ② 변환 퀴즈 ----------
+  // 제한 시간 60초 게임
+  const QUIZ_TIME = 60000;
+  let qCur = null, qEndAt = 0, qStartedAt = 0, qTimer = null, qNext = null;
+  let qLocked = true, qPts = 0, qCombo = 0, qBestCombo = 0, qRight = 0, qCount = 0;
+
+  function show(id, on) {
+    document.getElementById(id).classList.toggle("hidden", !on);
+  }
+
+  function startQuiz() {
+    clearInterval(qTimer);
+    clearTimeout(qNext);
+    qPts = 0; qCombo = 0; qBestCombo = 0; qRight = 0; qCount = 0;
+    qEndAt = Date.now() + QUIZ_TIME;
+    show("q-start", false);
+    show("q-end", false);
+    show("q-play", true);
+    qTimer = setInterval(tickQ, 200);
+    tickQ();
+    updateQStats();
+    nextQ();
+  }
+
+  function tickQ() {
+    const left = Math.max(0, Math.ceil((qEndAt - Date.now()) / 1000));
+    document.getElementById("q-time").textContent = left;
+    if (Date.now() >= qEndAt) endQuiz();
+  }
+
+  function nextQ() {
+    const t = Math.floor(Math.random() * 3);
+    if (t === 0) {
+      // mm -> cm (소수)
+      const n = 1 + Math.floor(Math.random() * 99);
+      qCur = { text: `${n} mm = ( ) cm`, ans: n / 10 };
+    } else if (t === 1) {
+      // 대분수 -> 소수 (4과 7/10 cm = ( ) cm)
+      const a = 1 + Math.floor(Math.random() * 9), b = 1 + Math.floor(Math.random() * 9);
+      qCur = { text: `${a}과 ${fr(b, 10)} cm = ( ) cm`, ans: a + b / 10 };
+    } else {
+      // 소수 -> 분수의 분자 (3.4 cm = (분자)/10 cm)
+      const a = 1 + Math.floor(Math.random() * 9), b = Math.floor(Math.random() * 10);
+      qCur = { text: `${a}.${b} cm = ${fr("( )", 10)} cm`, ans: a * 10 + b };
+    }
+    qStartedAt = Date.now();
+    qLocked = false;
+    document.getElementById("q-text").innerHTML = qCur.text;
+    const inp = document.getElementById("q-input");
+    inp.value = "";
+    inp.disabled = false;
+    inp.focus();
+    document.getElementById("q-fb").textContent = "";
+    document.getElementById("q-fb").className = "hint";
+  }
+
+  function checkQ() {
+    // 한 문제당 한 번만 채점 (잠금)
+    if (qLocked || !qCur) return;
+    const inp = document.getElementById("q-input");
+    if (inp.value === "") return;
+    qLocked = true;
+    inp.disabled = true;
+    qCount++;
+
+    const ok = Math.abs(Number(inp.value) - qCur.ans) < 1e-9;
+    const fb = document.getElementById("q-fb");
+    if (ok) {
+      qRight++;
+      qCombo++;
+      qBestCombo = Math.max(qBestCombo, qCombo);
+      const secs = (Date.now() - qStartedAt) / 1000;
+      const comboBonus = qCombo >= 2 ? (qCombo - 1) * 2 : 0;          // 2연속부터 가산
+      const speedBonus = secs <= 3 ? 5 : secs <= 6 ? 3 : secs <= 10 ? 1 : 0;
+      const gain = 10 + comboBonus + speedBonus;
+      qPts += gain;
+      fb.className = "ok";
+      fb.textContent = `정답! +${gain}점` +
+        (comboBonus ? ` (연속 +${comboBonus})` : "") +
+        (speedBonus ? ` (빠른 정답 +${speedBonus})` : "");
+    } else {
+      qCombo = 0;
+      fb.className = "no";
+      fb.textContent = `아쉬워요. 정답은 ${qCur.ans} 입니다.`;
+    }
+    updateQStats();
+    qNext = setTimeout(nextQ, ok ? 800 : 1400);
+  }
+
+  function updateQStats() {
+    document.getElementById("q-right").textContent = qRight;
+    document.getElementById("q-combo").textContent = qCombo;
+    document.getElementById("q-pts").textContent = qPts;
+  }
+
+  function endQuiz() {
+    clearInterval(qTimer);
+    clearTimeout(qNext);
+    qCur = null;
+    qLocked = true;
+    show("q-play", false);
+    show("q-end", true);
+    const acc = qCount ? Math.round((qRight / qCount) * 100) : 0;
+    document.getElementById("q-result").textContent = `60초 동안 ${qRight}문제 정답!`;
+    document.getElementById("q-detail").innerHTML =
+      `총점 <b>${qPts}점</b> · 시도 ${qCount}문제 · 정답률 ${acc}% · 최고 연속 정답 ${qBestCombo}회`;
+  }
+
+  // ---------- ③ 1 mm = 0.1 cm 원리 ----------
+  // 1 cm 막대를 그리고, hi칸을 주황색으로 칠하고, divide이면 10칸으로 나눕니다.
+  function segBar(hi, divide) {
+    const x0 = 20, L = 560, seg = L / 10, y = 40, h = 40;
+    let s = `<svg viewBox="0 0 640 110" xmlns="http://www.w3.org/2000/svg">`;
+    s += `<rect x="${x0}" y="${y}" width="${L}" height="${h}" fill="#fff"/>`;
+    for (let i = 0; i < hi; i++) {
+      s += `<rect x="${x0 + i * seg}" y="${y}" width="${seg}" height="${h}" fill="#ffb74d"/>`;
+    }
+    if (divide) {
+      for (let i = 1; i < 10; i++) {
+        s += `<line x1="${x0 + i * seg}" y1="${y}" x2="${x0 + i * seg}" y2="${y + h}" stroke="#333"/>`;
+      }
+      // 칸의 경계선에 맞춰 mm 눈금 숫자(0~10)를 씁니다
+      for (let i = 0; i <= 10; i++) {
+        s += `<text x="${x0 + i * seg}" y="${y + h + 18}" font-size="13" text-anchor="middle" fill="#2a6fdb">${i}</text>`;
+      }
+      s += `<text x="${x0 + L + 18}" y="${y + h + 18}" font-size="12" fill="#2a6fdb">mm</text>`;
+      // 각 칸 안에는 그 칸까지의 길이를 cm 소수로 씁니다 (0.1, 0.2, … 1.0)
+      for (let i = 0; i < 10; i++) {
+        s += `<text x="${x0 + (i + 0.5) * seg}" y="${y + h / 2 + 4}" font-size="11" font-weight="700" text-anchor="middle" fill="#222">${((i + 1) / 10).toFixed(1)} cm</text>`;
+      }
+    }
+    s += `<rect x="${x0}" y="${y}" width="${L}" height="${h}" fill="none" stroke="#333" stroke-width="1.5"/>`;
+    s += `<text x="${x0}" y="${y - 8}" font-size="13" text-anchor="middle" fill="#c0392b">0</text>`;
+    s += `<text x="${x0 + L}" y="${y - 8}" font-size="13" text-anchor="middle" fill="#c0392b">1 cm</text>`;
+    s += `</svg>`;
+    return s;
+  }
+
+  const STEPS = [
+    { title: "① 1 cm 자",
+      vis: () => segBar(0, false),
+      text: "1 cm는 자에서 0부터 1까지의 길이입니다. 이 1 cm를 mm로 바꾸면 10 mm입니다." },
+    { title: "② 1 cm를 10칸으로 나누기",
+      vis: () => segBar(0, true),
+      text: "1 cm를 똑같이 10칸으로 나누면, 한 칸의 길이는 1 mm입니다. 아래 파란 숫자는 mm 눈금이고, 칸 안의 숫자는 cm로 나타낸 길이(소수)입니다." },
+    { title: "③ 1 mm는 1 cm의 10분의 1",
+      vis: () => segBar(1, true),
+      text: `주황색 한 칸이 1 mm입니다. 전체 1 cm가 10칸이므로 1 mm = ${fr(1, 10)} cm 입니다.` },
+    { title: "④ 1/10을 소수로 쓰기",
+      vis: () => segBar(1, true),
+      text: `${fr(1, 10)} cm를 소수로 쓰면 0.1 cm 입니다. 그래서 1 mm = 0.1 cm 입니다.` },
+    { title: "⑤ 5 mm로 확인하기",
+      vis: () => segBar(5, true),
+      text: `5 mm는 5칸이므로 ${fr(5, 10)} cm입니다. 소수로 쓰면 0.5 cm 입니다.` },
+    { title: "⑥ 자릿값으로 읽기",
+      vis: () => `<table>
+        <tr><th>일의 자리<br>(cm)</th><th></th><th>소수 첫째 자리<br>(0.1 cm = 1 mm)</th></tr>
+        <tr><td>0</td><td style="font-size:1.8em;color:#c0392b;padding:0 6px">.</td><td>1</td></tr>
+        <tr><td>0 cm</td><td></td><td>1 mm</td></tr></table>`,
+      text: "0.1에서 점(.)의 오른쪽 첫째 자리가 소수 첫째 자리입니다. 이 자리는 mm 자리에 해당합니다." }
+  ];
+
+  let stepIdx = 0;
+  function stepMove(d) {
+    stepGo(Math.max(0, Math.min(STEPS.length - 1, stepIdx + d)));
+  }
+  function stepGo(i) {
+    stepIdx = i;
+    const st = STEPS[i];
+    document.getElementById("s-count").textContent = `${i + 1} / ${STEPS.length}`;
+    document.getElementById("s-title").textContent = st.title;
+    document.getElementById("s-visual").innerHTML = st.vis();
+    document.getElementById("s-text").innerHTML = st.text;
+  }
+
+  // ---------- ① 영역 모델: 0.1이 몇 개? ----------
+  let AREA = 9; // 칠한 0.1 칸 수 (0~10)
+  function setArea(v) {
+    AREA = Math.max(0, Math.min(20, v));
+    renderArea();
+  }
+  function renderArea() {
+    const S = 180, gap = 24, cw = S / 10;
+    const sq = Math.max(1, Math.ceil(AREA / 10)); // 필요한 정사각형 수 (1이 넘으면 늘어남)
+    const W = sq * S + (sq - 1) * gap;
+    let s = `<svg viewBox="0 0 ${W} ${S + 22}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let k = 0; k < sq; k++) {
+      const ox = k * (S + gap);
+      for (let i = 0; i < 10; i++) {
+        const t = k * 10 + i;              // 0부터 세는 0.1 칸 번호
+        const x = ox + i * cw;
+        const fill = t < AREA ? "#ffb74d" : "#fff";
+        s += `<rect x="${x}" y="0" width="${cw}" height="${S}" fill="${fill}" stroke="#333" stroke-width="1"/>`;
+        if (t < AREA) {
+          // 색칠된 칸: "0.1이 몇 개인지"를 위에서 아래로 읽히게 세로로 적기
+          s += `<text transform="translate(${x + cw / 2 - 4},${S / 2}) rotate(90)" font-size="11" font-weight="700" text-anchor="middle" fill="#222">0.1이 ${t + 1}개</text>`;
+        }
+        s += `<text x="${x + cw / 2}" y="${S + 15}" font-size="9" font-weight="700" text-anchor="middle" fill="#2a6fdb">${((t + 1) / 10).toFixed(1)}</text>`;
+      }
+      s += `<rect x="${ox}" y="0" width="${S}" height="${S}" fill="none" stroke="#333" stroke-width="2"/>`;
+    }
+    s += `</svg>`;
+    document.getElementById("area-box").innerHTML = s;
+    document.getElementById("area-slider").value = AREA;
+
+    const v = AREA % 10 === 0 ? String(AREA / 10) : (AREA / 10).toFixed(1);
+    document.getElementById("area-eq").innerHTML =
+      AREA === 0 ? `0.1이 0개 = <b>0</b>` : `0.1이 ${AREA}개 = <b>${v}</b>`;
+  }
+
+  // ---------- ④ cm·m로 0.01 알아보기 ----------
+  let H = 37; // 길이 (cm, 0~100) = 0.01 m 단위
+  function setH(v) {
+    H = Math.max(0, Math.min(100, v));
+    renderH();
+  }
+  // 1 m 자: 위는 cm 눈금, 아래는 m 소수 눈금
+  function ruler100(len) {
+    let s = `<svg viewBox="0 0 650 124" style="width:${ZOOM * 100}%" xmlns="http://www.w3.org/2000/svg">`;
+    s += `<rect x="${OX}" y="${BASE - 42}" width="${len * PX}" height="42" fill="#ffb74d" opacity=".45"/>`;
+    s += `<rect x="${OX}" y="${BASE - 3}" width="${len * PX}" height="3" fill="#e67e22"/>`;
+    s += `<line x1="${OX}" y1="${BASE}" x2="${OX + 100 * PX}" y2="${BASE}" stroke="#333" stroke-width="1.2"/>`;
+    for (let c = 0; c <= 100; c++) {
+      const x = OX + c * PX;
+      const h = c % 10 === 0 ? 34 : (c % 5 === 0 ? 22 : 12);
+      const col = c % 10 === 0 ? "#c0392b" : "#444";
+      s += `<line x1="${x}" y1="${BASE}" x2="${x}" y2="${BASE - h}" stroke="${col}" stroke-width="${c % 10 === 0 ? 1.6 : 0.8}"/>`;
+      if (c % 10 === 0) {
+        s += `<text x="${x}" y="${BASE - 44}" font-size="11" fill="#2a6fdb" text-anchor="middle">${c}</text>`;
+        s += `<text x="${x}" y="${BASE + 18}" font-size="13" font-weight="700" fill="#c0392b" text-anchor="middle">${(c / 100).toFixed(1)}</text>`;
+      }
+    }
+    s += `<text x="${OX + 100 * PX + 6}" y="${BASE - 44}" font-size="11" fill="#2a6fdb">cm</text>`;
+    s += `<text x="${OX + 100 * PX + 6}" y="${BASE + 18}" font-size="13" font-weight="700" fill="#c0392b">m</text>`;
+    s += `</svg>`;
+    return s;
+  }
+  function renderH() {
+    const m = Math.floor(H / 100);          // 일의 자리 (m)
+    const d2 = Math.floor(H / 10) % 10;     // 소수 첫째 자리 (0.1 m = 10 cm)
+    const d3 = H % 10;                      // 소수 둘째 자리 (0.01 m = 1 cm)
+    document.getElementById("h-ruler").innerHTML = ruler100(H);
+    document.getElementById("h-slider").value = H;
+    document.getElementById("h-big").textContent = `${m} m ${H % 100} cm`;
+    document.getElementById("h-d1").textContent = m;
+    document.getElementById("h-d2").textContent = d2;
+    document.getElementById("h-d3").textContent = d3;
+    document.getElementById("h-dec").textContent = `${m}.${d2}${d3} m`;
+    document.getElementById("h-frac").innerHTML = `${fr(H, 100)} m`;
+  }
+
+  // 영역 모델: 100칸 = 1, 한 칸 = 0.01, 한 줄 = 0.1
+  let HA = 37;
+  function setHA(v) {
+    HA = Math.max(0, Math.min(399, v));
+    renderHA();
+  }
+  function renderHAold() {
+    const S = 200, gap = 50, cw = S / 10;
+    const sq = Math.max(1, Math.ceil(HA / 100)); // 필요한 정사각형 수 (1이 넘으면 옆으로 늘어남)
+    // 세 자리를 나눠서 색 구분: 일의 자리(파랑), 소수 첫째 자리(주황), 소수 둘째 자리(초록)
+    const whole0 = Math.floor(HA / 100);     // 일의 자리: 1이 몇 개
+    const B1 = whole0 * 100;                 // 일의 자리 칸의 끝
+    const tt = Math.floor((HA % 100) / 10);  // 소수 첫째 자리: 0.1이 몇 개
+    const B2 = B1 + tt * 10;                 // 소수 첫째 자리 칸의 끝
+    const hh = HA % 10;                      // 소수 둘째 자리: 0.01이 몇 개
+    const W = (sq - 1) * (S + gap) + S + 40;
+    let s = `<svg viewBox="0 0 ${W} ${S}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let k = 0; k < sq; k++) {
+      const ox = k * (S + gap);
+      for (let r = 0; r < 10; r++) {
+        for (let c = 0; c < 10; c++) {
+          const t = k * 100 + r * 10 + c; // 0부터 세는 0.01 칸 번호
+          const fill = t < B1 ? "#90caf9" : t < B2 ? "#ffb74d" : t < HA ? "#81c784" : "#fff";
+          s += `<rect x="${ox + c * cw}" y="${r * cw}" width="${cw}" height="${cw}" fill="${fill}" stroke="#bbb" stroke-width=".5"/>`;
+        }
+        // 줄마다 0.1 단위의 값을 오른쪽에 표시
+        s += `<text x="${ox + S + 4}" y="${(r + 0.5) * cw + 4}" font-size="11" font-weight="700" fill="#2a6fdb">${((k * 100 + r * 10 + 10) / 100).toFixed(1)}</text>`;
+      }
+      s += `<rect x="${ox}" y="0" width="${S}" height="${S}" fill="none" stroke="#333" stroke-width="2"/>`;
+    }
+    s += `</svg>`;
+    document.getElementById("h-area").innerHTML = s;
+    document.getElementById("h-area-slider").value = HA;
+
+    // 분수 → 소수: 1과 59/100 = 1.59, 또는 37/100 = 0.37
+    const whole = Math.floor(HA / 100), rem = HA % 100;
+    const dec = rem === 0 ? String(whole) : `${whole}.${String(rem).padStart(2, "0")}`;
+    const frac = whole === 0 ? fr(rem, 100) : (rem === 0 ? String(whole) : `${whole}과 ${fr(rem, 100)}`);
+    document.getElementById("h-area-eq").innerHTML =
+      `${frac} = <b>${dec}</b><br>0.01이 ${HA}개<br>` +
+      `일의 자리 1이 ${whole0}개 + 소수 첫째 자리 0.1이 ${tt}개 + 소수 둘째 자리 0.01이 ${hh}개`;
+
+    // 색 범례
+    document.getElementById("h-legend").innerHTML =
+      `<span style="color:#1565c0;font-weight:700">■ 일의 자리 (1이 ${whole0}개)</span> &nbsp; ` +
+      `<span style="color:#e67e22;font-weight:700">■ 소수 첫째 자리 (0.1이 ${tt}개)</span> &nbsp; ` +
+      `<span style="color:#2e7d32;font-weight:700">■ 소수 둘째 자리 (0.01이 ${hh}개)</span>`;
+  }
+
+  // 자릿값별 영역 모델: 자연수(정사각형), 소수 첫째 자리(0.1 묶음, 10개 = 1), 소수 둘째 자리(0.01)
+  function renderHA() {
+    const w = Math.floor(HA / 100);          // 자연수 자리: 1이 몇 개
+    const t = Math.floor((HA % 100) / 10);   // 소수 첫째 자리: 0.1이 몇 개
+    const h = HA % 10;                       // 소수 둘째 자리: 0.01이 몇 개
+    const Q = 120;                           // 정사각형 한 변
+
+    // ① 자연수: 정사각형 하나가 1
+    const n1 = Math.max(1, w);
+    let p1 = `<svg width="${n1 * (Q + 8) - 8}" height="${Q}" viewBox="0 0 ${n1 * (Q + 8) - 8} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let k = 0; k < n1; k++) {
+      const ox = k * (Q + 8);
+      const on = k < w;
+      p1 += `<rect x="${ox}" y="0" width="${Q}" height="${Q}" fill="${on ? "#90caf9" : "#fff"}" stroke="#1565c0" stroke-width="2"/>`;
+      if (on) p1 += `<text x="${ox + Q / 2}" y="${Q / 2 + 6}" font-size="18" font-weight="700" text-anchor="middle" fill="#0d47a1">1</text>`;
+    }
+    p1 += `</svg>`;
+
+    // ② 소수 첫째 자리: 0.1 칸 10개가 한 묶음(= 1)
+    let p2 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let i = 0; i < 10; i++) {
+      const x = (i * Q) / 10;
+      p2 += `<rect x="${x}" y="0" width="${Q / 10}" height="${Q}" fill="${i < t ? "#ffb74d" : "#fff"}" stroke="#bbb" stroke-width=".8"/>`;
+    }
+    p2 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+
+    // ③ 소수 둘째 자리: 전체 1을 100칸(10×10)으로 나눈 100모델, 한 칸 = 0.01
+    let p3 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let k = 0; k < 100; k++) {
+      const r = Math.floor(k / 10), c = k % 10;
+      p3 += `<rect x="${(c * Q) / 10}" y="${(r * Q) / 10}" width="${Q / 10}" height="${Q / 10}" fill="${k < h ? "#81c784" : "#fff"}" stroke="#bbb" stroke-width=".5"/>`;
+    }
+    p3 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+
+    const cap = (title, body) =>
+      `<div style="text-align:center;margin:0 6px"><div style="font-size:.85em;color:#555;margin-bottom:4px">${title}</div>${body}</div>`;
+    document.getElementById("h-area").innerHTML =
+      `<div style="display:flex;justify-content:center;align-items:flex-end;gap:18px;flex-wrap:wrap">` +
+      cap(`일의 자리 (1이 ${w}개)`, p1) +
+      cap(`소수 첫째 자리 (0.1이 ${t}개)<br>10개 = 1`, p2) +
+      cap(`소수 둘째 자리 (0.01이 ${h}개)`, p3) +
+      `</div>`;
+    document.getElementById("h-area-slider").value = HA;
+
+    // 분수 → 소수, 자릿값 식
+    const rem = HA % 100;
+    const dec = rem === 0 ? String(w) : `${w}.${String(rem).padStart(2, "0")}`;
+    const frac = w === 0 ? fr(rem, 100) : (rem === 0 ? String(w) : `${w}과 ${fr(rem, 100)}`);
+    document.getElementById("h-area-eq").innerHTML =
+      `${frac} = <b>${dec}</b><br>0.01이 ${HA}개<br>` +
+      `일의 자리 1이 ${w}개 + 소수 첫째 자리 0.1이 ${t}개 + 소수 둘째 자리 0.01이 ${h}개`;
+
+    document.getElementById("h-legend").innerHTML =
+      `<span style="color:#1565c0;font-weight:700">■ 일의 자리 (1이 ${w}개)</span> &nbsp; ` +
+      `<span style="color:#e67e22;font-weight:700">■ 소수 첫째 자리 (0.1이 ${t}개)</span> &nbsp; ` +
+      `<span style="color:#2e7d32;font-weight:700">■ 소수 둘째 자리 (0.01이 ${h}개)</span>`;
+  }
+
+  // ---------- ⑤ km·m로 0.001 알아보기 ----------
+  let K = 370; // 길이 (m, 0~1000) = 0.001 km 단위
+  function setK(v) {
+    K = Math.max(0, Math.min(1000, v));
+    renderK();
+  }
+  // 1 km 자: 위는 m 눈금, 아래는 km 소수 눈금 (1 m = 0.6px)
+  function ruler1000(len) {
+    const P = 0.6;
+    let s = `<svg viewBox="0 0 680 124" style="width:${ZOOM * 100}%" xmlns="http://www.w3.org/2000/svg">`;
+    s += `<rect x="${OX}" y="${BASE - 42}" width="${len * P}" height="42" fill="#ffb74d" opacity=".45"/>`;
+    s += `<rect x="${OX}" y="${BASE - 3}" width="${len * P}" height="3" fill="#e67e22"/>`;
+    s += `<line x1="${OX}" y1="${BASE}" x2="${OX + 1000 * P}" y2="${BASE}" stroke="#333" stroke-width="1.2"/>`;
+    for (let m = 0; m <= 1000; m += 1) {
+      const x = OX + m * P;
+      const big = m % 100 === 0;
+      const mid = m % 10 === 0; // 10 m 눈금
+      const h = big ? 34 : mid ? 18 : 8;
+      s += `<line x1="${x}" y1="${BASE}" x2="${x}" y2="${BASE - h}" stroke="${big ? "#c0392b" : mid ? "#e67e22" : "#666"}" stroke-width="${big ? 1.6 : mid ? 1 : 0.5}"/>`;
+      if (big) {
+        s += `<text x="${x}" y="${BASE - 44}" font-size="11" fill="#2a6fdb" text-anchor="middle">${m}</text>`;
+        s += `<text x="${x}" y="${BASE + 18}" font-size="12" font-weight="700" fill="#c0392b" text-anchor="middle">${(m / 1000).toFixed(1)}</text>`;
+      }
+    }
+    s += `<text x="${OX + 600 + 30}" y="${BASE - 44}" font-size="11" fill="#2a6fdb">m</text>`;
+    s += `<text x="${OX + 600 + 30}" y="${BASE + 18}" font-size="12" font-weight="700" fill="#c0392b">km</text>`;
+    s += `</svg>`;
+    return s;
+  }
+  // 확대 보기: 현재 길이가 속한 10 m 구간을 1 m 눈금 10칸으로 쪼갬
+  function magnifier(len) {
+    const b = Math.min(990, Math.floor(len / 10) * 10); // 구간 시작 (m)
+    const seg = 60;                                      // 1 m = 60px
+    let s = `<svg viewBox="0 0 680 80" style="width:${ZOOM * 100}%" xmlns="http://www.w3.org/2000/svg">`;
+    s += `<rect x="${OX}" y="30" width="${(len - b) * seg}" height="20" fill="#ffb74d" opacity=".6"/>`;
+    s += `<line x1="${OX}" y1="50" x2="${OX + 10 * seg}" y2="50" stroke="#333" stroke-width="1.2"/>`;
+    for (let i = 0; i <= 10; i++) {
+      const x = OX + i * seg;
+      s += `<line x1="${x}" y1="50" x2="${x}" y2="${i % 5 === 0 ? 24 : 36}" stroke="#444" stroke-width="1"/>`;
+      s += `<text x="${x}" y="68" font-size="12" font-weight="700" text-anchor="middle" fill="#2a6fdb">${b + i}</text>`;
+    }
+    s += `<text x="${OX + 10 * seg + 14}" y="68" font-size="12" fill="#2a6fdb">m</text>`;
+    s += `</svg>`;
+    return s;
+  }
+
+  function renderK() {
+    document.getElementById("k-mag").innerHTML = magnifier(K);
+    const d1 = Math.floor(K / 1000);
+    const d2 = Math.floor(K / 100) % 10;
+    const d3 = Math.floor(K / 10) % 10;
+    const d4 = K % 10;
+    document.getElementById("k-ruler").innerHTML = ruler1000(K);
+    document.getElementById("k-slider").value = K;
+    document.getElementById("k-big").textContent = `${d1} km ${K % 1000} m`;
+    document.getElementById("k-d1").textContent = d1;
+    document.getElementById("k-d2").textContent = d2;
+    document.getElementById("k-d3").textContent = d3;
+    document.getElementById("k-d4").textContent = d4;
+    document.getElementById("k-dec").textContent = `${d1}.${d2}${d3}${d4} km`;
+    document.getElementById("k-frac").innerHTML = `${fr(K, 1000)} km`;
+  }
+
+  // 영역 모델 (⑥): 자연수 / 소수 첫째 / 소수 둘째 / 소수 셋째, 모두 같은 크기(한 변 120px)
+  let KA = 370; // 0~1999, 0.001 단위
+  function setKA(v) {
+    KA = Math.max(0, Math.min(1999, v));
+    renderKA();
+  }
+  function renderKAold() {
+    const w = Math.floor(KA / 1000);        // 자연수: 1 km가 몇 개
+    const t = Math.floor((KA % 1000) / 100); // 소수 첫째 자리: 0.1이 몇 개
+    const h = Math.floor((KA % 100) / 10);   // 소수 둘째 자리: 0.01이 몇 개
+    const k = KA % 10;                       // 소수 셋째 자리: 0.001이 몇 개
+    const Q = 120;
+
+    // ① 자연수: 정사각형 하나가 1
+    const n1 = Math.max(1, w);
+    const W1 = n1 * (Q + 8) - 8;
+    let p1 = `<svg width="${W1}" height="${Q}" viewBox="0 0 ${W1} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let i = 0; i < n1; i++) {
+      const ox = i * (Q + 8);
+      const on = i < w;
+      p1 += `<rect x="${ox}" y="0" width="${Q}" height="${Q}" fill="${on ? "#90caf9" : "#fff"}" stroke="#1565c0" stroke-width="2"/>`;
+      if (on) p1 += `<text x="${ox + Q / 2}" y="${Q / 2 + 6}" font-size="18" font-weight="700" text-anchor="middle" fill="#0d47a1">1</text>`;
+    }
+    p1 += `</svg>`;
+
+    // ② 소수 첫째 자리: 0.1 칸 10개가 한 묶음 (= 1)
+    let p2 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let i = 0; i < 10; i++) {
+      p2 += `<rect x="${(i * Q) / 10}" y="0" width="${Q / 10}" height="${Q}" fill="${i < t ? "#ffb74d" : "#fff"}" stroke="#bbb" stroke-width=".8"/>`;
+    }
+    p2 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+
+    // ③ 소수 둘째 자리: 100칸 모델, 한 칸 = 0.01
+    let p3 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let j = 0; j < 100; j++) {
+      const r = Math.floor(j / 10), c = j % 10;
+      p3 += `<rect x="${(c * Q) / 10}" y="${(r * Q) / 10}" width="${Q / 10}" height="${Q / 10}" fill="${j < h ? "#81c784" : "#fff"}" stroke="#bbb" stroke-width=".5"/>`;
+    }
+    p3 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+
+    // ④ 소수 셋째 자리: 전체 1을 1000칸(가로 40 × 세로 25)으로 나눈 1000모델, 한 칸 = 0.001
+    let p4 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    const cwid = Q / 40, chei = Q / 25;
+    for (let j = 0; j < 1000; j++) {
+      const r = Math.floor(j / 40), c = j % 40;
+      p4 += `<rect x="${c * cwid}" y="${r * chei}" width="${cwid}" height="${chei}" fill="${j < k ? "#ce93d8" : "#fff"}" stroke="#e0e0e0" stroke-width=".3"/>`;
+    }
+    p4 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+
+    const cap = (title, body) =>
+      `<div style="text-align:center;margin:0 4px"><div style="font-size:.8em;color:#555;margin-bottom:4px">${title}</div>${body}</div>`;
+    document.getElementById("k-area").innerHTML =
+      `<div style="display:flex;justify-content:center;align-items:flex-end;gap:12px;flex-wrap:wrap">` +
+      cap(`자연수 (1이 ${w}개)`, p1) +
+      cap(`소수 첫째 (0.1이 ${t}개)<br>10개 = 1`, p2) +
+      cap(`소수 둘째 (0.01이 ${h}개)`, p3) +
+      cap(`소수 셋째 (0.001이 ${k}개)`, p4) +
+      `</div>`;
+    document.getElementById("k-area-slider").value = KA;
+
+    // 분수 → 소수 식
+    const rem = KA % 1000;
+    const dec = rem === 0 ? String(w) : `${w}.${String(rem).padStart(3, "0")}`;
+    const frac = w === 0 ? fr(rem, 1000) : (rem === 0 ? String(w) : `${w}과 ${fr(rem, 1000)}`);
+    document.getElementById("k-area-eq").innerHTML =
+      `${frac} = <b>${dec}</b><br>0.001이 ${KA}개<br>` +
+      `일의 자리 1이 ${w}개 + 소수 첫째 자리 0.1이 ${t}개 + 소수 둘째 자리 0.01이 ${h}개 + 소수 셋째 자리 0.001이 ${k}개`;
+
+    document.getElementById("k-legend").innerHTML =
+      `<span style="color:#1565c0;font-weight:700">■ 자연수 (1이 ${w}개)</span> &nbsp; ` +
+      `<span style="color:#e67e22;font-weight:700">■ 소수 첫째 (0.1이 ${t}개)</span> &nbsp; ` +
+      `<span style="color:#2e7d32;font-weight:700">■ 소수 둘째 (0.01이 ${h}개)</span> &nbsp; ` +
+      `<span style="color:#7b1fa2;font-weight:700">■ 소수 셋째 (0.001이 ${k}개)</span>`;
+  }
+
+  // ---------- ⑤ 영역 모델: 직접 묶기/풀기 ----------
+  // 자리마다 개수를 따로 두고, 사용자가 직접 넘깁니다 (자동으로 넘기지 않음)
+  let KW = 0, KT = 0, KH = 0, KK = 370; // 자연수, 0.1, 0.01, 0.001의 개수
+  const KMAX = { W: 2, T: 10, H: 10, K: 1000 };
+  const KNAME = { W: "자연수 (1)", T: "소수 첫째 (0.1)", H: "소수 둘째 (0.01)", K: "소수 셋째 (0.001)" };
+  const KCOL = { W: "#1565c0", T: "#e67e22", H: "#2e7d32", K: "#7b1fa2" };
+  const KUP = { K: "H", H: "T", T: "W" };   // 묶으면 올라가는 자리
+  const KDOWN = { W: "T", T: "H", H: "K" }; // 풀면 내려가는 자리
+
+  function kGet(p) { return p === "W" ? KW : p === "T" ? KT : p === "H" ? KH : KK; }
+  function kSet(p, v) {
+    v = Math.max(0, Math.min(KMAX[p], v));
+    if (p === "W") KW = v; else if (p === "T") KT = v; else if (p === "H") KH = v; else KK = v;
+  }
+  function kStep(p, d) { kSet(p, kGet(p) + d); renderKA(); }
+  function canCarry(p) {
+    const up = KUP[p];
+    return !!up && kGet(p) >= 10 && kGet(up) + 1 <= KMAX[up];
+  }
+  function canUngroup(p) {
+    const dn = KDOWN[p];
+    return !!dn && kGet(p) >= 1 && kGet(dn) + 10 <= KMAX[dn];
+  }
+  function kCarry(p) {
+    if (!canCarry(p)) return;
+    kSet(p, kGet(p) - 10);
+    kSet(KUP[p], kGet(KUP[p]) + 1);
+    renderKA();
+  }
+  function kUngroup(p) {
+    if (!canUngroup(p)) return;
+    kSet(p, kGet(p) - 1);
+    kSet(KDOWN[p], kGet(KDOWN[p]) + 10);
+    renderKA();
+  }
+
+  function renderKA() {
+    const Q = 120;
+    const W = KW, T = KT, H = KH, K = KK;
+    const N = 1000 * W + 100 * T + 10 * H + K; // 전체 개수 (0.001 단위)
+
+    // ① 자연수: 정사각형 한 개 = 1
+    const n1 = Math.max(1, W);
+    const W1 = n1 * (Q + 8) - 8;
+    let p1 = `<svg width="${W1}" height="${Q}" viewBox="0 0 ${W1} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let i = 0; i < n1; i++) {
+      const ox = i * (Q + 8);
+      const on = i < W;
+      p1 += `<rect x="${ox}" y="0" width="${Q}" height="${Q}" fill="${on ? "#90caf9" : "#fff"}" stroke="#1565c0" stroke-width="2"/>`;
+      if (on) p1 += `<text x="${ox + Q / 2}" y="${Q / 2 + 6}" font-size="18" font-weight="700" text-anchor="middle" fill="#0d47a1">1</text>`;
+    }
+    p1 += `</svg>`;
+
+    // ② 소수 첫째 자리: 0.1 칸 10개 = 1
+    let p2 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let i = 0; i < 10; i++) {
+      p2 += `<rect x="${(i * Q) / 10}" y="0" width="${Q / 10}" height="${Q}" fill="${i < T ? "#ffb74d" : "#fff"}" stroke="#bbb" stroke-width=".8"/>`;
+    }
+    p2 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+
+    // ③ 소수 둘째 자리: 100칸 모델, 한 칸 = 0.01
+    let p3 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let j = 0; j < 100; j++) {
+      const r = Math.floor(j / 10), c = j % 10;
+      p3 += `<rect x="${(c * Q) / 10}" y="${(r * Q) / 10}" width="${Q / 10}" height="${Q / 10}" fill="${j < H ? "#81c784" : "#fff"}" stroke="#bbb" stroke-width=".5"/>`;
+    }
+    p3 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+
+    // ④ 소수 셋째 자리: 1000칸 모델, 10칸씩 묶음(= 0.01) 100개
+    let p4 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let b = 0; b < 100; b++) {
+      const bx = (b % 10) * (Q / 10), by = Math.floor(b / 10) * (Q / 10);
+      for (let i = 0; i < 10; i++) {
+        const j = b * 10 + i;
+        const x = bx + (i % 5) * (Q / 50), y = by + Math.floor(i / 5) * (Q / 20);
+        p4 += `<rect x="${x}" y="${y}" width="${Q / 50}" height="${Q / 20}" fill="${j < K ? "#ce93d8" : "#fff"}" stroke="#e0e0e0" stroke-width=".2"/>`;
+      }
+    }
+    p4 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+
+    const cap = (title, body) =>
+      `<div style="text-align:center;margin:0 4px"><div style="font-size:.8em;color:#555;margin-bottom:4px">${title}</div>${body}</div>`;
+    document.getElementById("k-area").innerHTML =
+      `<div style="display:flex;justify-content:center;align-items:flex-end;gap:12px;flex-wrap:wrap">` +
+      cap(`자연수 (1이 ${W}개)`, p1) +
+      cap(`소수 첫째 (0.1이 ${T}개)<br>10개 = 1`, p2) +
+      cap(`소수 둘째 (0.01이 ${H}개)`, p3) +
+      cap(`소수 셋째 (0.001이 ${K}개)<br>1000칸 = 1`, p4) +
+      `</div>`;
+
+    // 자리별 조작판: 직접 개수를 바꾸고, 묶기/풀기
+    document.getElementById("k-ctrl").innerHTML = ["W", "T", "H", "K"].map(p => {
+      const v = kGet(p);
+      const cu = canCarry(p), cd = canUngroup(p);
+      return `<div class="row" style="margin:4px 0;flex-wrap:nowrap;overflow-x:auto;gap:4px">
+        <b style="min-width:150px;color:${KCOL[p]}">${KNAME[p]}</b>
+        ${p === "K" ? `<button class="alt" onclick="kStep('K',-100)">−100</button><button class="alt" onclick="kStep('K',-10)">−10</button>` : ""}
+        ${p === "H" ? `<button class="alt" onclick="kStep('H',-10)">−10</button>` : ""}
+        <button class="alt" onclick="kStep('${p}',-1)">−1</button>
+        <span style="min-width:44px;text-align:center;font-weight:700">${v}</span>
+        <button class="alt" onclick="kStep('${p}',1)">+1</button>
+        ${p === "K" ? `<button class="alt" onclick="kStep('K',10)">+10</button><button class="alt" onclick="kStep('K',100)">+100</button>` : ""}
+        ${KUP[p] ? `<button onclick="kCarry('${p}')" ${cu ? "" : "disabled"} style="${cu ? "" : "opacity:.35"}">10개 묶기 ↑</button>` : ""}
+        ${KDOWN[p] ? `<button class="alt" onclick="kUngroup('${p}')" ${cd ? "" : "disabled"} style="${cd ? "" : "opacity:.35"}">1개 풀기 ↓</button>` : ""}
+      </div>`;
+    }).join("");
+
+    // 분수 → 소수 식 (전체 개수 N을 0.001 단위로)
+    const whole = Math.floor(N / 1000), rem = N % 1000;
+    const dec = rem === 0 ? String(whole) : `${whole}.${String(rem).padStart(3, "0")}`;
+    const frac = whole === 0 ? fr(rem, 1000) : (rem === 0 ? String(whole) : `${whole}과 ${fr(rem, 1000)}`);
+    document.getElementById("k-area-eq").innerHTML =
+      `${frac} = <b>${dec}</b><br>0.001이 ${N}개<br>` +
+      `일의 자리 1이 ${W}개 + 소수 첫째 자리 0.1이 ${T}개 + 소수 둘째 자리 0.01이 ${H}개 + 소수 셋째 자리 0.001이 ${K}개`;
+
+    document.getElementById("k-legend").innerHTML =
+      `<span style="color:${KCOL.W};font-weight:700">■ 자연수 (1이 ${W}개)</span> &nbsp; ` +
+      `<span style="color:${KCOL.T};font-weight:700">■ 소수 첫째 (0.1이 ${T}개)</span> &nbsp; ` +
+      `<span style="color:${KCOL.H};font-weight:700">■ 소수 둘째 (0.01이 ${H}개)</span> &nbsp; ` +
+      `<span style="color:${KCOL.K};font-weight:700">■ 소수 셋째 (0.001이 ${K}개)</span>`;
+  }
+
+  // ---------- ⑥ 자릿값 관계 (영역 모델) ----------
+  const RLAB = ["1", "0.1", "0.01", "0.001"];
+  let RBASE = 0; // 기준 단위 (0: 1, 1: 0.1, 2: 0.01, 3: 0.001)
+  function setRU(v) {
+    RBASE = RLAB.indexOf(v);
+    renderR();
+  }
+  // 기준 단위와 다른 단위의 관계를 식으로
+  function relText(i) {
+    const out = [];
+    for (let j = 0; j < 4; j++) {
+      if (j === i) continue;
+      const f = Math.pow(10, Math.abs(i - j));
+      // 4학년 수준: 「몇 개가 모였는가」로만 설명 (곱셈·나눗셈 식 사용 안 함)
+      out.push(j > i
+        ? `${RLAB[i]}은 ${RLAB[j]}이 ${f}개 모인 것`
+        : `${RLAB[j]}은 ${RLAB[i]}이 ${f}개 모인 것`);
+    }
+    return out.join("<br>");
+  }
+  // ---------- ④ 영역 모델 조작 (실시간) ----------
+  let RMSG = "";
+  const RLBL = { W: "1 모형", T: "0.1 칸", H: "0.01 칸", K: "0.001 칸" };
+  const RVAL = { W: 1000, T: 100, H: 10, K: 1 };                 // 0.001 단위로 본 한 칸의 크기
+  const RGROUP = { K: [10, 100, 1000], H: [10, 100], T: [10] };   // 한 번에 묶을 수 있는 개수
+  function rTotal() { return RW * 1000 + RT * 100 + RH * 10 + RK; }
+  function rSetTotal(N) {
+    RW = Math.floor(N / 1000);
+    RT = Math.floor(N / 100) % 10;
+    RH = Math.floor(N / 10) % 10;
+    RK = N % 10;
+  }
+  function rFmt(N) {
+    const ip = Math.floor(N / 1000);
+    const f = String(N % 1000).padStart(3, "0").replace(/0+$/, "");
+    return f ? `${ip}.${f}` : `${ip}`;
+  }
+  // g개를 묶어 한 단계 큰 칸 1개로 바꾸기 (예: 0.001 10개 → 0.01 1개, 0.001 1000개 → 1 모형 1개)
+  function rGroup(p, g) {
+    const up = Object.keys(RVAL).find(u => RVAL[u] === RVAL[p] * g);
+    if (!up) return;
+    if (rGet(p) < g) { RMSG = `${RLBL[p]}이 ${g}개 모여야 묶을 수 있어요.`; renderR(); return; }
+    if (rGet(up) + 1 > RMAX[up]) { RMSG = `${RLBL[up]} 칸이 가득 차서 묶을 수 없어요.`; renderR(); return; }
+    rSet(p, rGet(p) - g);
+    rSet(up, rGet(up) + 1);
+    RMSG = `${RLBL[p]} ${g}개를 묶어 ${RLBL[up]} 1개가 됐어요.`;
+    renderR();
+  }
+  // 1개를 한 단계 아래 칸 10개로 풀기
+  function rBreak(p) {
+    const dn = RDOWN[p];
+    if (!dn || rGet(p) < 1) return;
+    if (rGet(dn) + 10 > RMAX[dn]) { RMSG = `${RLBL[dn]} 칸이 가득 차서 풀 수 없어요.`; renderR(); return; }
+    rSet(p, rGet(p) - 1);
+    rSet(dn, rGet(dn) + 10);
+    RMSG = `${RLBL[p]} 1개를 풀어 ${RLBL[dn]} 10개가 됐어요.`;
+    renderR();
+  }
+  // 전체 수를 10배·100배·1000배 하거나 1/10·1/100·1/1000 하기 (실시간)
+  function rScale(f, mul) {
+    const N = rTotal();
+    let M;
+    if (mul) {
+      M = N * f;
+      if (M > 9999) { RMSG = "자연수 칸은 9까지만 있어요. 이보다 크게 만들 수 없어요."; renderR(); return; }
+    } else {
+      if (N % f !== 0) { RMSG = `0.001보다 작은 칸이 필요해서 ${f}분의 1로 옮길 수 없어요.`; renderR(); return; }
+      M = N / f;
+    }
+    rSetTotal(M);
+    RMSG = `${rFmt(N)}을 ${mul ? f + "배" : "1/" + f} 하면 ${rFmt(M)}`;
+    renderR();
+  }
+  function rReset() { rSetTotal(0); RMSG = ""; renderR(); }
+
+  function renderR() {
+    const Q = 120;
+    const sq = (fill, stroke, sw) =>
+      `<svg style="flex:none" width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="${Q - 2}" height="${Q - 2}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/></svg>`;
+    // 1 모형: RW개를 가로로 나열 (많으면 가로 스크롤)
+    let c1 = `<div style="display:flex;gap:6px;max-width:${3 * Q + 12}px;overflow-x:auto;padding-bottom:4px">`;
+    if (RW === 0) c1 += sq("#fff", "#999", 1);
+    for (let i = 0; i < RW; i++) c1 += sq("#90caf9", "#1565c0", 2);
+    c1 += `</div>`;
+    // 0.1 칸: 세로 10조각 중 RT개 칠하기
+    let c2 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let i = 0; i < 10; i++) c2 += `<rect x="${(i * Q) / 10}" y="0" width="${Q / 10}" height="${Q}" fill="${i < RT ? "#f48fb1" : "#fff"}" stroke="#bbb" stroke-width=".8"/>`;
+    c2 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+    // 0.01 칸: 10×10 중 RH개 칠하기
+    let c3 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let j = 0; j < 100; j++) {
+      const r = Math.floor(j / 10), c = j % 10;
+      c3 += `<rect x="${(c * Q) / 10}" y="${(r * Q) / 10}" width="${Q / 10}" height="${Q / 10}" fill="${j < RH ? "#81c784" : "#fff"}" stroke="#bbb" stroke-width=".5"/>`;
+    }
+    c3 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+    // 0.001 칸: 10칸씩 묶인 100블록 중 RK개 칠하기
+    let c4 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let b = 0; b < 100; b++) {
+      const bx = (b % 10) * (Q / 10), by = Math.floor(b / 10) * (Q / 10);
+      for (let i = 0; i < 10; i++) {
+        const j = b * 10 + i;
+        const x = bx + (i % 5) * (Q / 50), y = by + Math.floor(i / 5) * (Q / 20);
+        c4 += `<rect x="${x}" y="${y}" width="${Q / 50}" height="${Q / 20}" fill="${j < RK ? "#ffb74d" : "#fff"}" stroke="#e0e0e0" stroke-width=".2"/>`;
+      }
+    }
+    c4 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+
+    const cap = (idx, title, body) =>
+      `<div style="text-align:center;padding:6px;flex:none;${RBASE === idx ? "outline:3px dashed #d81b60;outline-offset:4px;border-radius:4px;" : ""}">` +
+      `<div style="font-size:.8em;color:#555;margin-bottom:4px">${title}</div>${body}</div>`;
+    document.getElementById("r-diagram").innerHTML =
+      `<div style="display:flex;justify-content:center;align-items:flex-end;gap:14px;flex-wrap:nowrap;min-width:max-content;margin:0 auto;zoom:${ZOOM}">` +
+      cap(0, `1 모형 (${RW}개)`, c1) +
+      cap(1, `0.1 칸 (${RT}개)`, c2) +
+      cap(2, `0.01 칸 (${RH}개)`, c3) +
+      cap(3, `0.001 칸 (${RK}개)`, c4) +
+      `</div>`;
+
+    // 조작판: 맨 위 처음부터, 그다음 배·나누기 한 줄, 자리별 한 줄씩
+    const top = `<div class="row" style="justify-content:center;margin:0 0 6px"><button class="alt" onclick="rReset()">처음부터</button></div>`;
+    const fac = [[10, 1, "10배 ↑"], [100, 1, "100배 ↑"], [1000, 1, "1000배 ↑"], [10, 0, "1/10 ↓"], [100, 0, "1/100 ↓"], [1000, 0, "1/1000 ↓"]];
+    const facRow = `<div class="row" style="justify-content:center;flex-wrap:nowrap;overflow-x:auto;gap:6px">` +
+      fac.map(([f, m, l]) => `<button onclick="rScale(${f},${m})">${l}</button>`).join("") + `</div>`;
+    const rowFor = p => {
+      const v = rGet(p);
+      const extraL = p === "K" ? `<button class="alt" onclick="rAdd('K',-100)">−100</button><button class="alt" onclick="rAdd('K',-10)">−10</button>`
+        : p === "H" ? `<button class="alt" onclick="rAdd('H',-10)">−10</button>` : "";
+      const extraR = p === "K" ? `<button class="alt" onclick="rAdd('K',10)">+10</button><button class="alt" onclick="rAdd('K',100)">+100</button>` : "";
+      const groups = (RGROUP[p] || []).map(g => {
+        const up = Object.keys(RVAL).find(u => RVAL[u] === RVAL[p] * g);
+        const ok = v >= g && rGet(up) + 1 <= RMAX[up];
+        return `<button onclick="rGroup('${p}',${g})" ${ok ? "" : "disabled"} style="${ok ? "" : "opacity:.35"}">${g}개 묶기 ↑</button>`;
+      }).join("");
+      const dn = RDOWN[p];
+      const brkOk = !!dn && v >= 1 && rGet(dn) + 10 <= RMAX[dn];
+      const brk = dn ? `<button class="alt" onclick="rBreak('${p}')" ${brkOk ? "" : "disabled"} style="${brkOk ? "" : "opacity:.35"}">1개 풀기 ↓</button>` : "";
+      return `<div class="row" style="margin:4px 0;flex-wrap:nowrap;overflow-x:auto;gap:4px">` +
+        `<b style="min-width:84px;color:${KCOL[p]}">${RLBL[p]}</b>` + extraL +
+        `<button class="alt" onclick="rAdd('${p}',-1)">−1</button>` +
+        `<span style="min-width:40px;text-align:center;font-weight:700">${v}</span>` +
+        `<button class="alt" onclick="rAdd('${p}',1)">+1</button>` + extraR + groups + brk + `</div>`;
+    };
+    document.getElementById("r-ctrl").innerHTML = top + facRow + ["W", "T", "H", "K"].map(rowFor).join("");
+
+    document.getElementById("r-comp").innerHTML =
+      `1 모형 ${RW}개 + 0.1이 ${RT}개 + 0.01이 ${RH}개 + 0.001이 ${RK}개 = <b>${rFmt(rTotal())}</b>` +
+      (RMSG ? `<br><span style="color:#d81b60;font-weight:700">${RMSG}</span>` : "");
+    document.getElementById("r-eq").innerHTML = `<b>기준 ${RLAB[RBASE]}</b><br>` + relText(RBASE);
+  }
+
+  function renderROld() {
+    const S = 120, Y = 50, X = [10, 200, 390, 580];
+    let s = `<svg viewBox="0 0 780 280" style="width:${ZOOM * 100}%" xmlns="http://www.w3.org/2000/svg">`;
+    s += `<defs>
+      <marker id="rArrRed" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#d81b60"/></marker>
+      <marker id="rArrBlue" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1e88e5"/></marker>
+    </defs>`;
+
+    // ① 1: 정사각형 하나
+    s += `<rect x="${X[0]}" y="${Y}" width="${S}" height="${S}" fill="${RW >= 1 ? "#90caf9" : "#d6ecfb"}" stroke="#4fa3e0"/>`;
+
+    // ② 0.1: 10칸으로 나눈 세로줄, 한 칸(분홍)
+    s += `<rect x="${X[1]}" y="${Y}" width="${S}" height="${S}" fill="#fff" stroke="#4fa3e0"/>`;
+    for (let i = 0; i < RT; i++) {
+      s += `<rect x="${X[1] + (i * S) / 10}" y="${Y}" width="${S / 10}" height="${S}" fill="#f48fb1"/>`;
+    }
+    for (let i = 1; i < 10; i++) {
+      const x = X[1] + (i * S) / 10;
+      s += `<line x1="${x}" y1="${Y}" x2="${x}" y2="${Y + S}" stroke="#8fc7ef" stroke-width=".8" stroke-dasharray="2,2"/>`;
+    }
+
+    // ③ 0.01: 10×10 = 100칸, 한 칸(초록)
+    s += `<rect x="${X[2]}" y="${Y}" width="${S}" height="${S}" fill="#fff" stroke="#4fa3e0"/>`;
+    for (let j = 0; j < RH; j++) {
+      const r = Math.floor(j / 10), c = j % 10;
+      s += `<rect x="${X[2] + (c * S) / 10}" y="${Y + (r * S) / 10}" width="${S / 10}" height="${S / 10}" fill="#81c784"/>`;
+    }
+    for (let i = 1; i < 10; i++) {
+      const p = (i * S) / 10;
+      s += `<line x1="${X[2] + p}" y1="${Y}" x2="${X[2] + p}" y2="${Y + S}" stroke="#8fc7ef" stroke-width=".7" stroke-dasharray="2,2"/>`;
+      s += `<line x1="${X[2]}" y1="${Y + p}" x2="${X[2] + S}" y2="${Y + p}" stroke="#8fc7ef" stroke-width=".7" stroke-dasharray="2,2"/>`;
+    }
+
+    // ④ 0.001: 1000칸 (0.01 블록 100개, 블록 하나는 10칸), 한 칸(주황)
+    s += `<rect x="${X[3]}" y="${Y}" width="${S}" height="${S}" fill="#fff" stroke="#4fa3e0"/>`;
+    for (let i = 0; i < 50; i++) {
+      const x = X[3] + (i * S) / 50;
+      s += `<line x1="${x}" y1="${Y}" x2="${x}" y2="${Y + S}" stroke="#bfe0f7" stroke-width=".3"/>`;
+    }
+    for (let j = 0; j < 20; j++) {
+      const y = Y + (j * S) / 20;
+      s += `<line x1="${X[3]}" y1="${y}" x2="${X[3] + S}" y2="${y}" stroke="#bfe0f7" stroke-width=".3"/>`;
+    }
+    for (let i = 0; i <= 10; i++) {
+      const p = (i * S) / 10;
+      s += `<line x1="${X[3] + p}" y1="${Y}" x2="${X[3] + p}" y2="${Y + S}" stroke="#4fa3e0" stroke-width=".9"/>`;
+      s += `<line x1="${X[3]}" y1="${Y + p}" x2="${X[3] + S}" y2="${Y + p}" stroke="#4fa3e0" stroke-width=".9"/>`;
+    }
+    for (let j = 0; j < RK; j++) {
+      const b = Math.floor(j / 10), i = j % 10;   // b: 0.01 블록 번호, i: 블록 안의 칸
+      const x = X[3] + (b % 10) * (S / 10) + (i % 5) * (S / 50);
+      const y = Y + Math.floor(b / 10) * (S / 10) + Math.floor(i / 5) * (S / 20);
+      s += `<rect x="${x}" y="${y}" width="${S / 50}" height="${S / 20}" fill="#ffb74d"/>`;
+    }
+
+    // 확대 원: 0.01 블록 한 개(10칸)를 크게 보여 줌
+    const cx = 735, cy = 110;
+    s += `<line x1="${X[3] + S / 10}" y1="${Y + S / 20}" x2="${cx - 22}" y2="${cy - 12}" stroke="#e53935" stroke-width="1"/>`;
+    s += `<circle cx="${cx}" cy="${cy}" r="30" fill="#fff" stroke="#e53935" stroke-width="1.2"/>`;
+    const bw = 40, bh = 24, bx = cx - bw / 2, by = cy - bh / 2;
+    for (let i = 0; i < 10; i++) {
+      const x = bx + (i % 5) * (bw / 5), y = by + Math.floor(i / 5) * (bh / 2);
+      s += `<rect x="${x}" y="${y}" width="${bw / 5}" height="${bh / 2}" fill="${i === 0 ? "#ffb74d" : "#fff"}" stroke="#4fa3e0" stroke-width=".6"/>`;
+    }
+
+    // 기준 단위 표시 (점선 상자)
+    s += `<rect x="${X[RBASE] - 5}" y="${Y - 5}" width="${S + 10}" height="${S + 10}" fill="none" stroke="#d81b60" stroke-width="2.5" stroke-dasharray="6,4"/>`;
+
+    // 아래 숫자
+    for (let i = 0; i < 4; i++) {
+      s += `<text x="${X[i] + S / 2}" y="${Y + S + 26}" font-size="18" font-weight="700" text-anchor="middle" fill="#222">${RLAB[i]}</text>`;
+    }
+
+    // 위쪽 빨간 화살표: 오른쪽 → 왼쪽, 10배
+    for (let i = 1; i < 4; i++) {
+      const xr = X[i] + S / 2, xl = X[i - 1] + S / 2;
+      s += `<path d="M${xr} ${Y - 6} Q${(xr + xl) / 2} ${Y - 56} ${xl} ${Y - 6}" fill="none" stroke="#d81b60" stroke-width="2" marker-end="url(#rArrRed)"/>`;
+      s += `<text x="${(xr + xl) / 2}" y="${Y - 38}" font-size="15" font-weight="700" text-anchor="middle" fill="#d81b60">10배</text>`;
+    }
+
+    // 아래쪽 파란 화살표: 왼쪽 → 오른쪽, 1/10
+    for (let i = 0; i < 3; i++) {
+      const x1 = X[i] + S / 2 + 22, x2 = X[i + 1] + S / 2 - 22;
+      s += `<path d="M${x1} ${Y + S + 40} Q${(x1 + x2) / 2} ${Y + S + 90} ${x2} ${Y + S + 40}" fill="none" stroke="#1e88e5" stroke-width="2" marker-end="url(#rArrBlue)"/>`;
+      s += `<text x="${(x1 + x2) / 2}" y="${Y + S + 80}" font-size="15" font-weight="700" text-anchor="middle" fill="#1e88e5">1/10</text>`;
+    }
+
+    // 정사각형을 누르면 한 칸씩 칠하기
+    [["W", X[0]], ["T", X[1]], ["H", X[2]], ["K", X[3]]].forEach(([p, x]) => {
+      s += `<rect x="${x}" y="${Y}" width="${S}" height="${S}" fill="transparent" style="cursor:pointer" onclick="rAdd('${p}',1)"/>`;
+    });
+    s += `</svg>`;
+    document.getElementById("r-diagram").innerHTML = s;
+    document.getElementById("r-eq").innerHTML = `<b>기준 ${RLAB[RBASE]}</b><br>` + relText(RBASE);
+    renderRCtrl();
+  }
+
+  // ⑥ 직접 조작용 상태: 자리마다 칠한 개수 (1은 한 개, 0.1은 10개가 한 정사각형)
+  let RW = 0, RT = 0, RH = 0, RK = 0;
+  const RMAX = { W: 9, T: 10, H: 10, K: 1000 };
+  const RUP = { K: "H", H: "T", T: "W" };   // 묶으면 올라가는 자리
+  const RDOWN = { W: "T", T: "H", H: "K" }; // 풀면 내려가는 자리
+  const RNAME = { W: "1 칸", T: "0.1 칸", H: "0.01 칸", K: "0.001 칸" };
+  function rGet(p) { return p === "W" ? RW : p === "T" ? RT : p === "H" ? RH : RK; }
+  function rSet(p, v) {
+    v = Math.max(0, Math.min(RMAX[p], v));
+    if (p === "W") RW = v; else if (p === "T") RT = v; else if (p === "H") RH = v; else RK = v;
+  }
+  function rAdd(p, d) { rSet(p, rGet(p) + d); renderR(); }
+  function rCanCarry(p) {
+    const u = RUP[p];
+    return !!u && rGet(p) >= 10 && rGet(u) + 1 <= RMAX[u];
+  }
+  function rCanUngroup(p) {
+    const d = RDOWN[p];
+    return !!d && rGet(p) >= 1 && rGet(d) + 10 <= RMAX[d];
+  }
+  function rCarry(p) {
+    if (!rCanCarry(p)) return;
+    rSet(p, rGet(p) - 10);
+    rSet(RUP[p], rGet(RUP[p]) + 1);
+    renderR();
+  }
+  function rUngroup(p) {
+    if (!rCanUngroup(p)) return;
+    rSet(p, rGet(p) - 1);
+    rSet(RDOWN[p], rGet(RDOWN[p]) + 10);
+    renderR();
+  }
+  function renderRCtrlOld() {
+    document.getElementById("r-ctrl").innerHTML = ["W", "T", "H", "K"].map(p => {
+      const v = rGet(p), cu = rCanCarry(p), cd = rCanUngroup(p);
+      return `<div class="row" style="margin:4px 0">
+        <b style="min-width:110px;color:${KCOL[p]}">${RNAME[p]}</b>
+        ${p === "K" ? `<button class="alt" onclick="rAdd('K',-100)">−100</button><button class="alt" onclick="rAdd('K',-10)">−10</button>` : ""}
+        ${p === "H" ? `<button class="alt" onclick="rAdd('H',-10)">−10</button>` : ""}
+        <button class="alt" onclick="rAdd('${p}',-1)">−1</button>
+        <span style="min-width:44px;text-align:center;font-weight:700">${v}</span>
+        <button class="alt" onclick="rAdd('${p}',1)">+1</button>
+        ${p === "K" ? `<button class="alt" onclick="rAdd('K',10)">+10</button><button class="alt" onclick="rAdd('K',100)">+100</button>` : ""}
+        ${RUP[p] ? `<button onclick="rCarry('${p}')" ${cu ? "" : "disabled"} style="${cu ? "" : "opacity:.35"}">10개 묶기 ↑</button>` : ""}
+        ${RDOWN[p] ? `<button class="alt" onclick="rUngroup('${p}')" ${cd ? "" : "disabled"} style="${cd ? "" : "opacity:.35"}">1개 풀기 ↓</button>` : ""}
+      </div>`;
+    }).join("");
+    const Nv = RW * 1000 + RT * 100 + RH * 10 + RK; // 0.001 단위 전체 개수
+    const wh = Math.floor(Nv / 1000), rem = Nv % 1000;
+    const dec = rem === 0 ? String(wh) : `${wh}.${String(rem).padStart(3, "0")}`;
+    document.getElementById("r-comp").innerHTML =
+      `1이 ${RW}개 + 0.1이 ${RT}개 + 0.01이 ${RH}개 + 0.001이 ${RK}개 = <b>${dec}</b><br>0.001이 ${Nv}개`;
+  }
+
+  // ---------- ⑦ 소수의 10배·1/10 (자릿값판) ----------
+  // 자리: 백, 십, 일, 소수 첫째, 둘째, 셋째 (6칸). 각 줄은 숫자 배열
+  let PB = { rows: [[0, 0, 0, 7, 1, 6]], cur: 0 }; // 0.716에서 시작
+  let PMsg = "";
+  let PAnim = null; // 배 버튼으로 새로 생긴 줄의 숫자가 움직이는 정보 {row, dx}
+  let PSPEED = 0.7; // 숫자가 움직이는 시간(초), 클수록 느림
+  function pVal(d) {
+    const w = [100000, 10000, 1000, 100, 10, 1]; // 0.001 단위
+    return d.reduce((s, x, i) => s + x * w[i], 0);
+  }
+  function pFmt(d) {
+    const ip = d[0] * 100 + d[1] * 10 + d[2];
+    const f = [d[3], d[4], d[5]].join("").replace(/0+$/, "");
+    return f ? `${ip}.${f}` : `${ip}`;
+  }
+  function pShift(d, dir) {
+    if (dir > 0) return d[0] !== 0 ? null : [...d.slice(1), 0]; // ×10: 숫자가 한 칸 왼쪽으로
+    return d[5] !== 0 ? null : [0, ...d.slice(0, 5)];            // ÷10: 숫자가 한 칸 오른쪽으로
+  }
+  function pOp(n, dir) {
+    const times = Math.round(Math.log10(n));
+    const cur = PB.rows[PB.cur];
+    let d = cur;
+    for (let t = 0; t < times; t++) {
+      d = pShift(d, dir);
+      if (!d) {
+        PMsg = "칸을 벗어나서 더 옮길 수 없어요. 숫자를 가운데 자리로 옮겨 보세요.";
+        renderP();
+        return;
+      }
+    }
+    // 결과는 항상 처음 판 아래(맨 아래)에 쌓이고, 새 줄이 현재 줄이 됩니다
+    PB.rows.push(d);
+    PB.cur = PB.rows.length - 1;
+    // 숫자가 원래 자리에서 옮겨 가는 모습을 보여 주기 위해 시작 위치를 기억
+    PAnim = { row: PB.cur, dx: (dir > 0 ? 1 : -1) * times * 84 };
+    PMsg = dir > 0
+      ? `${pFmt(cur)} × ${n} = ${pFmt(d)} (소수점이 오른쪽으로 ${times}칸 이동)`
+      : `${pFmt(cur)} ÷ ${n} = ${pFmt(d)} (소수점이 왼쪽으로 ${times}칸 이동)`;
+    renderP();
+  }
+  function pTap(r, c) {
+    PB.rows[r][c] = (PB.rows[r][c] + 1) % 10;
+    PB.cur = r;
+    PMsg = "";
+    renderP();
+  }
+  function pReset() {
+    PB = { rows: [[0, 0, 0, 0, 0, 0]], cur: 0 }; // 모든 자리를 0으로
+    PMsg = "";
+    renderP();
+  }
+  function renderP() {
+    const LX = 150, PW = 84, PH = 60, TOP = 24;
+    const rows = PB.rows;
+    const names = ["백", "십", "일", "소수 첫째", "둘째", "셋째"];
+    const Wd = LX + 6 * PW + 120, Ht = TOP + rows.length * PH + 16;
+    let s = `<svg viewBox="0 0 ${Wd} ${Ht}" style="width:${ZOOM * 100}%" xmlns="http://www.w3.org/2000/svg">`;
+    s += `<defs>
+      <marker id="pMag" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#d81b60"/></marker>
+      <marker id="pBlue" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1e88e5"/></marker>
+    </defs>`;
+    // 자리 이름
+    names.forEach((nm, c) => {
+      s += `<text x="${LX + c * PW + PW / 2}" y="${TOP - 8}" font-size="11" fill="#666" text-anchor="middle">${nm}</text>`;
+    });
+    // 줄 그리기
+    rows.forEach((d, r) => {
+      const y = TOP + r * PH;
+      s += `<rect x="${LX}" y="${y}" width="${6 * PW}" height="${PH}" fill="${r === PB.cur ? "#fff3cd" : "#fff"}" stroke="#888" stroke-width="1.2"/>`;
+      for (let c = 1; c < 6; c++) {
+        s += `<line x1="${LX + c * PW}" y1="${y}" x2="${LX + c * PW}" y2="${y + PH}" stroke="#aaa" stroke-dasharray="4,4"/>`;
+      }
+      d.forEach((v, c) => {
+        if (c < 2 && v === 0) return; // 백·십 자리의 0은 숨김
+        s += `<g class="mv" data-row="${r}"><text x="${LX + c * PW + PW / 2}" y="${y + PH / 2 + 9}" font-size="26" font-weight="700" text-anchor="middle" fill="#222">${v}</text></g>`;
+      });
+      // 소수점: 일의 자리와 소수 첫째 자리 사이
+      s += `<circle cx="${LX + 3 * PW}" cy="${y + PH - 10}" r="3.5" fill="#111"/>`;
+      // 칸을 누르면 숫자 1씩 증가
+      for (let c = 0; c < 6; c++) {
+        s += `<rect x="${LX + c * PW}" y="${y}" width="${PW}" height="${PH}" fill="transparent" style="cursor:pointer" onclick="pTap(${r},${c})"/>`;
+      }
+    });
+    // 줄 사이 화살표: 위가 더 크면 파란 1/10, 위가 더 작으면 빨간 10배
+    for (let r = 0; r < rows.length - 1; r++) {
+      const U = pVal(rows[r]), L = pVal(rows[r + 1]);
+      if (!U || !L || U === L) continue;
+      const big = U > L ? U / L : L / U;
+      const lg = Math.log10(big);
+      if (Math.abs(lg - Math.round(lg)) > 1e-9) continue; // 10의 거듭제곱 관계만 표시
+      const ratio = Math.pow(10, Math.round(lg));
+      const yU = TOP + r * PH + PH / 2, yL = TOP + (r + 1) * PH + PH / 2, ym = (yU + yL) / 2;
+      if (U > L) {
+        const xa = LX + 6 * PW + 14;
+        s += `<path d="M${xa} ${yU - 8} Q${xa + 26} ${ym} ${xa} ${yL + 8}" fill="none" stroke="#1e88e5" stroke-width="2" marker-end="url(#pBlue)"/>`;
+        const fx = xa + 44;
+        s += `<text x="${fx}" y="${ym - 4}" font-size="18" font-weight="700" text-anchor="middle" fill="#1e88e5">1</text>`;
+        s += `<line x1="${fx - 16}" y1="${ym}" x2="${fx + 16}" y2="${ym}" stroke="#1e88e5" stroke-width="1.5"/>`;
+        s += `<text x="${fx}" y="${ym + 18}" font-size="18" font-weight="700" text-anchor="middle" fill="#1e88e5">${ratio}</text>`;
+      } else {
+        const xa = LX + 6 * PW + 14;
+        s += `<path d="M${xa} ${yU + 8} Q${xa + 26} ${ym} ${xa} ${yL - 8}" fill="none" stroke="#d81b60" stroke-width="2" marker-end="url(#pMag)"/>`;
+        s += `<text x="${xa + 40}" y="${ym + 6}" font-size="17" font-weight="700" text-anchor="middle" fill="#d81b60">${ratio}배</text>`;
+      }
+    }
+    s += `</svg>`;
+    document.getElementById("p-board").innerHTML = s;
+    // 배 버튼 결과: 숫자가 원래 자리에서 새 자리로 미끄러지듯 이동
+    if (PAnim) {
+      const moving = document.querySelectorAll(`#p-board .mv[data-row="${PAnim.row}"]`);
+      moving.forEach(el => {
+        el.style.transition = "none";
+        el.style.transform = `translateX(${PAnim.dx}px)`;
+      });
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        moving.forEach(el => {
+          el.style.transition = `transform ${PSPEED}s ease`;
+          el.style.transform = "translateX(0px)";
+        });
+      }));
+      PAnim = null;
+    }
+    // 자릿값별 숫자 버튼판 (현재 줄에서 선택된 숫자는 진한 색)
+    const dn = ["백", "십", "일", "소수 첫째", "둘째", "셋째"];
+    const curRow = rows[PB.cur];
+    let pad = `<table style="margin:0 auto"><tr>` +
+      dn.map(nm => `<th style="font-size:.8em;padding:4px 6px">${nm}</th>`).join("") + `</tr>`;
+    for (let v = 0; v <= 9; v++) {
+      pad += `<tr>` + dn.map((nm, c) =>
+        `<td style="padding:2px"><button class="${curRow[c] === v ? "" : "alt"}" style="padding:4px 0;width:52px" onclick="pSetDigit(${c},${v})">${v}</button></td>`
+      ).join("") + `</tr>`;
+    }
+    pad += `</table>`;
+    document.getElementById("p-digits").innerHTML = pad;
+    document.getElementById("p-msg").innerHTML =
+      `${PMsg ? PMsg + "<br>" : ""}현재 수: <b>${pFmt(rows[PB.cur])}</b>`;
+  }
+
+  // 숫자 직접 입력: 전체 입력칸(35.27 같은 수)을 현재 줄에 자릿값대로 넣음
+  function pInput() {
+    const raw = document.getElementById("p-input").value.trim();
+    if (!/^\d+(\.\d+)?$/.test(raw)) { PMsg = "숫자만 입력해 주세요. 예: 35.27"; renderP(); return; }
+    const [ip, fp = ""] = raw.split(".");
+    if (ip.length > 3) { PMsg = "이 자릿값판은 백의 자리까지만 있어요."; renderP(); return; }
+    if (fp.length > 3) { PMsg = "이 자릿값판은 소수 셋째 자리까지만 있어요."; renderP(); return; }
+    PB.rows[PB.cur] = [...ip.padStart(3, "0"), ...fp.padEnd(3, "0")].map(Number);
+    PMsg = `${raw}을(를) 자릿값에 맞춰 입력했어요.`;
+    renderP();
+  }
+  // 움직임 속도 설정 (슬라이더 값 = 움직이는 시간, 초)
+  function pSetSpeed(v) {
+    PSPEED = v;
+    document.getElementById("p-speed-label").textContent = `${v.toFixed(1)}초`;
+  }
+  // 자릿값 버튼으로 현재 줄의 해당 자리 숫자 설정
+  function pSetDigit(c, v) {
+    PB.rows[PB.cur][c] = v;
+    PMsg = "";
+    renderP();
+  }
+
+  // ---------- ⑧ 소수점이 움직이는 자릿값판 ----------
+  // 숫자 6칸(백~셋째)은 그대로 두고, 소수점의 위치(D: 소수점 왼쪽 칸 수)만 움직입니다.
+  let XB = { rows: [{ d: [0, 0, 0, 7, 1, 6], D: 3 }], cur: 0 }; // 0.716에서 시작
+  let XMsg = "";
+  let XANIM = null;   // 배 버튼으로 생긴 줄의 소수점 이동 정보
+  let XSPEED = 0.7;   // 움직이는 시간(초)
+  const XNAME = ["백", "십", "일", "소수 첫째", "둘째", "셋째"];
+  function xValue(row) {
+    const n = row.d.reduce((s, x) => s * 10 + x, 0); // 6자리 정수
+    return n * Math.pow(10, row.D - 6);
+  }
+  function xFmt(row) {
+    const ip = row.d.slice(0, row.D).join("") || "0";
+    const f = row.d.slice(row.D).join("").replace(/0+$/, "");
+    return f ? `${Number(ip)}.${f}` : `${Number(ip)}`;
+  }
+  function xOp(n, dir) {
+    const times = Math.round(Math.log10(n));
+    const cur = XB.rows[XB.cur];
+    const D2 = cur.D + dir * times;
+    if (D2 < 0 || D2 > 6) {
+      XMsg = "소수점이 칸 밖으로 나갈 수 없어요. 반대 방향으로 옮겨 보세요.";
+      xRender();
+      return;
+    }
+    const nr = { d: [...cur.d], D: D2 };
+    XB.rows.push(nr);
+    XB.cur = XB.rows.length - 1;
+    XANIM = { row: XB.cur, dx: (cur.D - D2) * 84 }; // 소수점이 이전 위치에서 출발
+    XMsg = `${xFmt(cur)} ${dir > 0 ? "×" : "÷"} ${n} = ${xFmt(nr)} (소수점이 ${dir > 0 ? "오른쪽" : "왼쪽"}으로 ${times}칸 이동)`;
+    xRender();
+  }
+  function xTap(r, c) {
+    XB.rows[r].d[c] = (XB.rows[r].d[c] + 1) % 10;
+    XB.cur = r;
+    XMsg = "";
+    xRender();
+  }
+  function xSetDigit(c, v) {
+    XB.rows[XB.cur].d[c] = v;
+    XMsg = "";
+    xRender();
+  }
+  function xInput() {
+    const raw = document.getElementById("x-input").value.trim();
+    if (!/^\d+(\.\d+)?$/.test(raw)) { XMsg = "숫자만 입력해 주세요. 예: 35.27"; xRender(); return; }
+    const [ip, fp = ""] = raw.split(".");
+    if (ip.length > 3) { XMsg = "이 자릿값판은 백의 자리까지만 있어요."; xRender(); return; }
+    if (fp.length > 3) { XMsg = "이 자릿값판은 소수 셋째 자리까지만 있어요."; xRender(); return; }
+    XB.rows[XB.cur] = { d: [...ip.padStart(3, "0"), ...fp.padEnd(3, "0")].map(Number), D: 3 };
+    XMsg = `${raw}을(를) 자릿값에 맞춰 입력했어요.`;
+    xRender();
+  }
+  function xReset() {
+    XB = { rows: [{ d: [0, 0, 0, 0, 0, 0], D: 3 }], cur: 0 }; // 모든 자리를 0으로
+    XMsg = "";
+    xRender();
+  }
+  function xSetSpeed(v) {
+    XSPEED = v;
+    document.getElementById("x-speed-label").textContent = `${v.toFixed(1)}초`;
+  }
+  function xRender() {
+    const LX = 150, PW = 84, PH = 60, TOP = 24;
+    const rows = XB.rows;
+    const Wd = LX + 6 * PW + 120, Ht = TOP + rows.length * PH + 16;
+    let s = `<svg viewBox="0 0 ${Wd} ${Ht}" style="width:${ZOOM * 100}%" xmlns="http://www.w3.org/2000/svg">`;
+    s += `<defs>
+      <marker id="xMag" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#d81b60"/></marker>
+      <marker id="xBlue" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1e88e5"/></marker>
+    </defs>`;
+    XNAME.forEach((nm, c) => {
+      s += `<text x="${LX + c * PW + PW / 2}" y="${TOP - 8}" font-size="11" fill="#666" text-anchor="middle">${nm}</text>`;
+    });
+    rows.forEach((row, r) => {
+      const y = TOP + r * PH;
+      s += `<rect x="${LX}" y="${y}" width="${6 * PW}" height="${PH}" fill="${r === XB.cur ? "#fff3cd" : "#fff"}" stroke="#888" stroke-width="1.2"/>`;
+      for (let c = 1; c < 6; c++) {
+        s += `<line x1="${LX + c * PW}" y1="${y}" x2="${LX + c * PW}" y2="${y + PH}" stroke="#aaa" stroke-dasharray="4,4"/>`;
+      }
+      row.d.forEach((v, c) => {
+        // 소수점 앞의 0은 숨기되, 소수점 바로 앞의 0은 남김
+        const zerosBefore = row.d.slice(0, c + 1).every(x => x === 0);
+        if (c < row.D - 1 && zerosBefore) return;
+        s += `<text x="${LX + c * PW + PW / 2}" y="${y + PH / 2 + 9}" font-size="26" font-weight="700" text-anchor="middle" fill="#222">${v}</text>`;
+      });
+      // 소수점 (움직이는 점)
+      s += `<g class="xdot" data-row="${r}"><circle cx="${LX + row.D * PW}" cy="${y + PH - 10}" r="4" fill="#111"/></g>`;
+      for (let c = 0; c < 6; c++) {
+        s += `<rect x="${LX + c * PW}" y="${y}" width="${PW}" height="${PH}" fill="transparent" style="cursor:pointer" onclick="xTap(${r},${c})"/>`;
+      }
+    });
+    // 줄 사이 화살표 (항상 위에서 아래로)
+    for (let r = 0; r < rows.length - 1; r++) {
+      const U = xValue(rows[r]), L = xValue(rows[r + 1]);
+      if (!U || !L || U === L) continue;
+      const big = U > L ? U / L : L / U;
+      const lg = Math.log10(big);
+      if (Math.abs(lg - Math.round(lg)) > 1e-9) continue;
+      const ratio = Math.pow(10, Math.round(lg));
+      const yU = TOP + r * PH + PH / 2, yL = TOP + (r + 1) * PH + PH / 2, ym = (yU + yL) / 2;
+      const xa = LX + 6 * PW + 14;
+      if (U > L) {
+        s += `<path d="M${xa} ${yU + 8} Q${xa + 26} ${ym} ${xa} ${yL - 8}" fill="none" stroke="#1e88e5" stroke-width="2" marker-end="url(#xBlue)"/>`;
+        const fx = xa + 44;
+        s += `<text x="${fx}" y="${ym - 4}" font-size="18" font-weight="700" text-anchor="middle" fill="#1e88e5">1</text>`;
+        s += `<line x1="${fx - 16}" y1="${ym}" x2="${fx + 16}" y2="${ym}" stroke="#1e88e5" stroke-width="1.5"/>`;
+        s += `<text x="${fx}" y="${ym + 18}" font-size="18" font-weight="700" text-anchor="middle" fill="#1e88e5">${ratio}</text>`;
+      } else {
+        s += `<path d="M${xa} ${yU + 8} Q${xa + 26} ${ym} ${xa} ${yL - 8}" fill="none" stroke="#d81b60" stroke-width="2" marker-end="url(#xMag)"/>`;
+        s += `<text x="${xa + 40}" y="${ym + 6}" font-size="17" font-weight="700" text-anchor="middle" fill="#d81b60">${ratio}배</text>`;
+      }
+    }
+    s += `</svg>`;
+    document.getElementById("x-board").innerHTML = s;
+
+    // 소수점 이동 애니메이션: 이전 위치에서 새 위치로 미끄러짐
+    if (XANIM) {
+      const dots = document.querySelectorAll(`#x-board .xdot[data-row="${XANIM.row}"]`);
+      dots.forEach(el => {
+        el.style.transition = "none";
+        el.style.transform = `translateX(${XANIM.dx}px)`;
+      });
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        dots.forEach(el => {
+          el.style.transition = `transform ${XSPEED}s ease`;
+          el.style.transform = "translateX(0px)";
+        });
+      }));
+      XANIM = null;
+    }
+
+    // 자릿값별 숫자 버튼판
+    const cur = XB.rows[XB.cur];
+    let pad = `<table style="margin:0 auto"><tr>` +
+      XNAME.map(nm => `<th style="font-size:.8em;padding:4px 6px">${nm}</th>`).join("") + `</tr>`;
+    for (let v = 0; v <= 9; v++) {
+      pad += `<tr>` + XNAME.map((nm, c) =>
+        `<td style="padding:2px"><button class="${cur.d[c] === v ? "" : "alt"}" style="padding:4px 0;width:52px" onclick="xSetDigit(${c},${v})">${v}</button></td>`
+      ).join("") + `</tr>`;
+    }
+    pad += `</table>`;
+    document.getElementById("x-digits").innerHTML = pad;
+    document.getElementById("x-msg").innerHTML = `${XMsg ? XMsg + "<br>" : ""}현재 수: <b>${xFmt(cur)}</b>`;
+  }
+
+  // ---------- ⑧ 영역 모델로 두 소수 비교 ----------
+  // 각 수: [자연수, 소수 첫째, 소수 둘째, 소수 셋째]
+  let CA = [0, 3, 1, 6]; // 0.316
+  let CB = [0, 4, 0, 0]; // 0.4
+  const CNAME = ["자연수", "소수 첫째 자리", "소수 둘째 자리", "소수 셋째 자리"];
+  function cStep(who, i, d) {
+    const arr = who === "A" ? CA : CB;
+    const max = i === 0 ? 99 : 9;          // 자연수는 0~99, 나머지는 0~9
+    arr[i] = (arr[i] + d + max + 1) % (max + 1);
+    cRender();
+  }
+  function cCtrl(who, v) {
+    return `<table style="margin:0 auto"><tr>` +
+      CNAME.map(n => `<th style="font-size:.75em;padding:4px">${n}</th>`).join("") + `</tr>` +
+      `<tr>` + v.map((_, i) => `<td><button class="alt" onclick="cStep('${who}',${i},1)">▲</button></td>`).join("") + `</tr>` +
+      `<tr>` + v.map(x => `<td style="font-size:1.6em;font-weight:700;text-align:center;padding:0 10px">${x}</td>`).join("") + `</tr>` +
+      `<tr>` + v.map((_, i) => `<td><button class="alt" onclick="cStep('${who}',${i},-1)">▼</button></td>`).join("") + `</tr></table>`;
+  }
+  // 영역 모델 네 칸 (⑤과 같은 방식), 비교 중인 자리는 빨간 점선 상자
+  function cModel(v, label, hi, col) {
+    const [a, t, h, k] = v;
+    const Q = 120;
+    // 자연수: 1 모형 한 개 = 소수 첫째 칸의 전체 정사각형과 같은 120px 크기 (한 줄 3개, 많으면 세로로 스크롤)
+    let p1;
+    if (a === 0) {
+      p1 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="${Q - 2}" height="${Q - 2}" fill="#fff" stroke="#999" stroke-dasharray="4,4"/></svg>`;
+    } else {
+      p1 = `<div style="display:flex;flex-wrap:nowrap;gap:8px;max-width:${3 * Q + 16}px;overflow-x:auto;padding-bottom:6px">`;
+      for (let i = 0; i < a; i++) {
+        p1 += `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="${Q - 2}" height="${Q - 2}" fill="#90caf9" stroke="#1565c0" stroke-width="2"/></svg>`;
+      }
+      p1 += `</div>`;
+    }
+    let p2 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let i = 0; i < 10; i++) {
+      p2 += `<rect x="${(i * Q) / 10}" y="0" width="${Q / 10}" height="${Q}" fill="${i < t ? "#ffb74d" : "#fff"}" stroke="#bbb" stroke-width=".8"/>`;
+    }
+    p2 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+    let p3 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let j = 0; j < 100; j++) {
+      const r = Math.floor(j / 10), c = j % 10;
+      p3 += `<rect x="${(c * Q) / 10}" y="${(r * Q) / 10}" width="${Q / 10}" height="${Q / 10}" fill="${j < h ? "#81c784" : "#fff"}" stroke="#bbb" stroke-width=".5"/>`;
+    }
+    p3 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+    // 소수 셋째 자리: 1000모형 (가로 40 × 세로 25 = 1000칸), k개가 칠해짐 (한 칸 = 0.001)
+    let p4 = `<svg width="${Q}" height="${Q}" viewBox="0 0 ${Q} ${Q}" xmlns="http://www.w3.org/2000/svg">`;
+    const cwid = Q / 40, chei = Q / 25;
+    for (let j = 0; j < 1000; j++) {
+      const r = Math.floor(j / 40), c = j % 40;
+      p4 += `<rect x="${c * cwid}" y="${r * chei}" width="${cwid}" height="${chei}" fill="${j < k ? "#ce93d8" : "#fff"}" stroke="#e0e0e0" stroke-width=".2"/>`;
+    }
+    p4 += `<rect x="0" y="0" width="${Q}" height="${Q}" fill="none" stroke="#333" stroke-width="2"/></svg>`;
+    const cap = (idx, title, body) =>
+      `<div style="text-align:center;margin:0 6px;padding:6px;${hi === idx ? "outline:3px dashed #d81b60;outline-offset:4px;border-radius:4px;" : ""}">` +
+      `<div style="font-size:.8em;color:#555;margin-bottom:4px">${title}</div>${body}</div>`;
+    // 자릿값 판: 자연수 칸 바로 옆에 소수점(.)을 별도 칸으로 두고, 그 오른쪽에 소수 자리를 씀
+    const th = txt => `<th style="font-size:.8em;font-weight:600;padding:2px 8px;color:#555">${txt}</th>`;
+    const td = (x, extra = "") => `<td style="font-size:1.6em;font-weight:700;padding:2px 12px;border:1px solid #ddd;text-align:center;${extra}">${x}</td>`;
+    const board = `<table style="margin:4px auto 10px;border-collapse:collapse"><tr>` +
+      th("자연수") + th("") + th("소수 첫째") + th("소수 둘째") + th("소수 셋째") + `</tr><tr>` +
+      td(a) + `<td style="font-size:2.2em;font-weight:700;color:#c0392b;padding:0 6px;line-height:1">.</td>` +
+      td(t) + td(h) + td(k) + `</tr></table>`;
+    return `<div style="margin:10px 0"><div style="font-weight:700;color:${col};margin-bottom:2px">${label}: ${a}.${t}${h}${k}</div>` + board +
+      `<div style="display:flex;justify-content:center;align-items:flex-end;gap:12px;flex-wrap:wrap">` +
+      cap(0, `자연수 (1이 ${a}개)`, p1) +
+      cap(1, `소수 첫째 (0.1이 ${t}개)`, p2) +
+      cap(2, `소수 둘째 (0.01이 ${h}개)`, p3) +
+      cap(3, `소수 셋째 (0.001이 ${k}개)`, p4) +
+      `</div></div>`;
+  }
+  // 해당 수의 모든 자리를 0으로 되돌리기
+  function cReset(who) {
+    if (who === "A") CA = [0, 0, 0, 0]; else CB = [0, 0, 0, 0];
+    cRender();
+  }
+  function cRender() {
+    document.getElementById("c-ctrlA").innerHTML =
+      `<b style="color:#1565c0">수 A</b> <button class="alt" onclick="cReset('A')">처음부터</button>` + cCtrl("A", CA);
+    document.getElementById("c-ctrlB").innerHTML =
+      `<b style="color:#d81b60">수 B</b> <button class="alt" onclick="cReset('B')">처음부터</button>` + cCtrl("B", CB);
+    const NA = CA[0] * 1000 + CA[1] * 100 + CA[2] * 10 + CA[3];
+    const NB = CB[0] * 1000 + CB[1] * 100 + CB[2] * 10 + CB[3];
+    const sA = `${CA[0]}.${CA[1]}${CA[2]}${CA[3]}`, sB = `${CB[0]}.${CB[1]}${CB[2]}${CB[3]}`;
+    const sym = NA > NB ? ">" : NA < NB ? "<" : "=";
+    const hi = CA.findIndex((x, i) => x !== CB[i]); // 처음으로 다른 자리 (-1이면 같음)
+    document.getElementById("c-result").innerHTML = `A ${sA} ${sym} B ${sB}`;
+    document.getElementById("c-modelA").innerHTML = cModel(CA, "수 A", hi, "#1565c0");
+    document.getElementById("c-modelB").innerHTML = cModel(CB, "수 B", hi, "#d81b60");
+    document.getElementById("c-why").innerHTML = hi < 0
+      ? "두 수가 같습니다. 모든 자리의 칸 수가 같아요."
+      : `가장 먼저 다른 자리는 <b>${CNAME[hi]}</b>입니다. 이 자리에서 A는 ${CA[hi]}, B는 ${CB[hi]}이므로 ${NA > NB ? "A" : "B"}가 더 큰 수입니다.`;
+  }
+
+  // 시작
+  stepGo(0);
+  renderExplore();
+  renderArea();
+  renderH();
+  renderHA();
+  renderK();
+  renderKA();
+  renderR();
+  renderP();
+  xRender();
+  cRender();
+</script>
+</body>
+</html>
